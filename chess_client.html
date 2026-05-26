@@ -1320,7 +1320,6 @@ const cleanUsername = (value) => {
   return cleaned.length >= 3 ? cleaned : '';
 };
 
-const LOCAL_APP_URL = 'http://localhost:5173/chess_client.html';
 const getAuthRedirectUrl = () => {
   if (location.protocol === 'file:') return null;
   return `${location.origin}${location.pathname}`;
@@ -1475,16 +1474,12 @@ const rankedSignUp = async () => {
     return;
   }
   const emailRedirectTo = getAuthRedirectUrl();
-  if (!emailRedirectTo) {
-    rankedMsg('ranked-auth-msg', `Run a local server first, then open ${LOCAL_APP_URL}. From the app folder: python3 -m http.server 5173`, 'err');
-    return;
-  }
   rankedMsg('ranked-auth-msg', 'Creating account...');
   const { data, error } = await sb.auth.signUp({
     email: $('ranked-email').value.trim(),
     password: $('ranked-password').value,
     options: {
-      emailRedirectTo,
+      ...(emailRedirectTo ? { emailRedirectTo } : {}),
       data: { username, display_name: username },
     },
   });
@@ -1493,7 +1488,7 @@ const rankedSignUp = async () => {
     return;
   }
   if (!data.session) {
-    rankedMsg('ranked-auth-msg', 'Check your email to confirm the account, then sign in.', 'ok');
+    rankedMsg('ranked-auth-msg', 'Check your email to confirm the account. If the link opens a blank or failed localhost page, the account is usually still confirmed; return here and sign in.', 'ok');
     return;
   }
   rankedUser = data.user;
