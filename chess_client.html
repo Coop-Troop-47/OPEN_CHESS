@@ -595,7 +595,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
             <div id="ranked-avatar-fallback" class="ranked-avatar">?</div>
             <div style="min-width:0">
               <div id="ranked-display" class="ranked-name">Player</div>
-              <div id="ranked-handle" class="ranked-meta">@player</div>
+              <div class="ranked-meta">Public player name</div>
             </div>
           </div>
           <div id="ranked-rating" class="ranked-rating">1200</div>
@@ -607,8 +607,6 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
           <div class="ranked-stat"><strong id="ranked-games">0</strong><span>Games</span></div>
         </div>
         <div class="ranked-form" style="margin-top:10px">
-          <label for="ranked-display-input">Display name</label>
-          <input type="text" id="ranked-display-input" placeholder="Display name" maxlength="32">
           <label for="ranked-username-input">Username</label>
           <input type="text" id="ranked-username-input" placeholder="Username" maxlength="24">
           <label for="ranked-avatar-file">Profile picture</label>
@@ -1303,7 +1301,7 @@ const setMenuOpen = (open) => {
 };
 
 const updateMenuAccount = () => {
-  const name = rankedProfile?.display_name || rankedProfile?.username || rankedUser?.email || 'Sign in';
+  const name = rankedProfile?.username || rankedUser?.email || 'Sign in';
   const signedIn = !!rankedUser;
   $('menu-account-main').textContent = signedIn ? name : 'Sign in';
   $('menu-account-sub').textContent = signedIn
@@ -1376,14 +1374,9 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({
 }[c]));
 
 const avatarInitial = (profile) =>
-  (profile?.display_name || profile?.username || rankedUser?.email || '?').trim().charAt(0).toUpperCase();
+  (profile?.username || rankedUser?.email || '?').trim().charAt(0).toUpperCase();
 
 const isGeneratedUsername = (value) => /^player_[a-f0-9]{12}$/i.test(value || '');
-
-const profileHandle = (profile) => {
-  if (!profile?.username || isGeneratedUsername(profile.username)) return '';
-  return `@${profile.username}`;
-};
 
 const setRankedAvatar = (profile) => {
   const img = $('ranked-avatar-img');
@@ -1408,7 +1401,7 @@ const renderLeaderboardRows = (profiles, targetId) => {
     return;
   }
   el.innerHTML = profiles.map((p, i) => {
-    const name = p.display_name || p.username || 'Player';
+    const name = p.username || 'Player';
     const avatar = p.avatar_url
       ? `<img class="ranked-avatar" src="${esc(p.avatar_url)}" alt="">`
       : `<div class="ranked-avatar">${esc(name.charAt(0).toUpperCase())}</div>`;
@@ -1427,7 +1420,7 @@ const loadRankedLeaderboard = async () => {
   if (!sb) return;
   const { data, error } = await sb
     .from('profiles')
-    .select('username, display_name, avatar_url, rating, wins, losses, draws')
+    .select('username, avatar_url, rating, wins, losses, draws')
     .order('rating', { ascending: false })
     .order('wins', { ascending: false })
     .limit(20);
@@ -1453,6 +1446,14 @@ const loadRankedProfile = async () => {
     .eq('id', rankedUser.id)
     .single();
   if (error) {
+    if (error.code === 'PGRST116') {
+      await sb.auth.signOut();
+      rankedUser = null;
+      rankedProfile = null;
+      renderRankedAuth();
+      rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
+      return;
+    }
     rankedMsg('ranked-profile-msg', `Profile error: ${error.message}`, 'err');
     rankedProfile = null;
   } else {
@@ -1471,17 +1472,13 @@ const renderRankedAuth = () => {
     return;
   }
   const p = rankedProfile || {};
-  const name = p.display_name || p.username || rankedUser.email || 'Player';
-  const handle = profileHandle(p);
+  const name = p.username || rankedUser.email || 'Player';
   $('ranked-display').textContent = name;
-  $('ranked-handle').textContent = handle || rankedUser.email || '';
-  $('ranked-handle').style.display = handle ? '' : 'none';
   $('ranked-rating').textContent = p.rating ?? 1200;
   $('ranked-wins').textContent = p.wins ?? 0;
   $('ranked-losses').textContent = p.losses ?? 0;
   $('ranked-draws').textContent = p.draws ?? 0;
   $('ranked-games').textContent = (p.wins || 0) + (p.losses || 0) + (p.draws || 0);
-  $('ranked-display-input').value = p.display_name || '';
   $('ranked-username-input').value = isGeneratedUsername(p.username) ? '' : (p.username || '');
   $('side-ranked-account').textContent = `${name} · ${p.rating ?? 1200} ELO`;
   setRankedAvatar(p);
@@ -1496,13 +1493,13 @@ const initSupabase = async () => {
   }
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   rankedReady = true;
-  const { data } = await sb.auth.getSession();
-  rankedUser = data.session?.user || null;
   sb.auth.onAuthStateChange(async (_event, session) => {
     rankedUser = session?.user || null;
     await loadRankedProfile();
     await loadRankedLeaderboard();
   });
+  const { data, error } = await sb.auth.getUser();
+  rankedUser = error ? null : data.user;
   await loadRankedProfile();
   await loadRankedLeaderboard();
 };
@@ -1510,11 +1507,21 @@ const initSupabase = async () => {
 const rankedSignIn = async () => {
   if (!sb) return;
   rankedMsg('ranked-auth-msg', 'Signing in...');
-  const { error } = await sb.auth.signInWithPassword({
+  const { data, error } = await sb.auth.signInWithPassword({
     email: $('ranked-email').value.trim(),
     password: $('ranked-password').value,
   });
-  rankedMsg('ranked-auth-msg', error ? error.message : 'Signed in.', error ? 'err' : 'ok');
+  if (error) {
+    rankedUser = null;
+    rankedProfile = null;
+    renderRankedAuth();
+    rankedMsg('ranked-auth-msg', error.message, 'err');
+    return;
+  }
+  rankedUser = data.user;
+  await loadRankedProfile();
+  await loadRankedLeaderboard();
+  rankedMsg('ranked-auth-msg', 'Signed in.', 'ok');
 };
 
 const rankedSignUp = async () => {
@@ -1531,7 +1538,7 @@ const rankedSignUp = async () => {
     password: $('ranked-password').value,
     options: {
       ...(emailRedirectTo ? { emailRedirectTo } : {}),
-      data: { username, display_name: username },
+      data: { username },
     },
   });
   if (error) {
@@ -1544,7 +1551,7 @@ const rankedSignUp = async () => {
   }
   rankedUser = data.user;
   await loadRankedProfile();
-  await updateRankedProfile({ username, display_name: username }, false);
+  await updateRankedProfile({ username }, false);
   rankedMsg('ranked-auth-msg', 'Account created.', 'ok');
 };
 
@@ -1636,7 +1643,6 @@ const avatarCropToBlob = () => new Promise(resolve => {
 const rankedSaveProfile = async () => {
   if (!sb || !rankedUser) return;
   const username = cleanUsername($('ranked-username-input').value);
-  const displayName = $('ranked-display-input').value.trim().slice(0, 32);
   if (!username) {
     rankedMsg('ranked-profile-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
     return;
@@ -1655,7 +1661,6 @@ const rankedSaveProfile = async () => {
   }
   await updateRankedProfile({
     username,
-    display_name: displayName || username,
     avatar_url,
   });
   $('ranked-avatar-file').value = '';
