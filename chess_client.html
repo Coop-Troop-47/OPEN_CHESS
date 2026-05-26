@@ -1434,32 +1434,58 @@ const loadRankedLeaderboard = async () => {
   renderLeaderboardRows(data?.slice(0, 8), 'side-ranked-leaderboard');
 };
 
+let profileLoadPromise = null;
+
 const loadRankedProfile = async () => {
-  if (!sb || !rankedUser) {
-    rankedProfile = null;
-    renderRankedAuth();
-    return;
-  }
-  const { data, error } = await sb
-    .from('profiles')
-    .select('*')
-    .eq('id', rankedUser.id)
-    .single();
-  if (error) {
-    if (error.code === 'PGRST116') {
-      await sb.auth.signOut();
-      rankedUser = null;
+  if (profileLoadPromise) return profileLoadPromise;
+  profileLoadPromise = (async () => {
+    if (!sb || !rankedUser) {
       rankedProfile = null;
       renderRankedAuth();
-      rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
-      return;
+      return false;
     }
-    rankedMsg('ranked-profile-msg', `Profile error: ${error.message}`, 'err');
-    rankedProfile = null;
-  } else {
-    rankedProfile = data;
+    try {
+      const { data, error } = await sb
+        .from('profiles')
+        .select('*')
+        .eq('id', rankedUser.id)
+        .single();
+      if (error) {
+        if (error.code === 'PGRST116') {
+          try {
+            await sb.auth.signOut();
+          } catch (signOutErr) {
+            console.error('SignOut error:', signOutErr);
+          }
+          rankedUser = null;
+          rankedProfile = null;
+          renderRankedAuth();
+          rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
+          return false;
+        }
+        rankedMsg('ranked-profile-msg', `Profile error: ${error.message}`, 'err');
+        rankedProfile = null;
+        renderRankedAuth();
+        return false;
+      } else {
+        rankedProfile = data;
+        renderRankedAuth();
+        return true;
+      }
+    } catch (err) {
+      console.error('loadRankedProfile error:', err);
+      rankedMsg('ranked-profile-msg', `Profile load error: ${err.message || err}`, 'err');
+      rankedProfile = null;
+      renderRankedAuth();
+      return false;
+    }
+  })();
+
+  try {
+    return await profileLoadPromise;
+  } finally {
+    profileLoadPromise = null;
   }
-  renderRankedAuth();
 };
 
 const renderRankedAuth = () => {
@@ -1495,34 +1521,49 @@ const initSupabase = async () => {
   rankedReady = true;
   sb.auth.onAuthStateChange(async (_event, session) => {
     rankedUser = session?.user || null;
-    await loadRankedProfile();
+    if (!session) {
+      rankedProfile = null;
+      renderRankedAuth();
+    } else {
+      await loadRankedProfile();
+    }
     await loadRankedLeaderboard();
   });
   const { data, error } = await sb.auth.getUser();
   rankedUser = error ? null : data.user;
-  await loadRankedProfile();
+  if (rankedUser) {
+    await loadRankedProfile();
+  } else {
+    rankedProfile = null;
+    renderRankedAuth();
+  }
   await loadRankedLeaderboard();
 };
 
 const rankedSignIn = async () => {
   if (!sb) return;
   rankedMsg('ranked-auth-msg', 'Signing in...');
-  const { data, error } = await sb.auth.signInWithPassword({
-    email: $('ranked-email').value.trim(),
-    password: $('ranked-password').value,
-  });
-  if (error) {
-    rankedUser = null;
-    rankedProfile = null;
-    renderRankedAuth();
-    rankedMsg('ranked-auth-msg', error.message, 'err');
-    return;
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: $('ranked-email').value.trim(),
+      password: $('ranked-password').value,
+    });
+    if (error) {
+      rankedUser = null;
+      rankedProfile = null;
+      renderRankedAuth();
+      rankedMsg('ranked-auth-msg', error.message, 'err');
+      return;
+    }
+    rankedUser = data.user;
+    const profileLoaded = await loadRankedProfile();
+    if (!profileLoaded || !rankedUser) return;
+    await loadRankedLeaderboard();
+    rankedMsg('ranked-auth-msg', 'Signed in.', 'ok');
+  } catch (err) {
+    console.error('Sign in exception:', err);
+    rankedMsg('ranked-auth-msg', `Sign in error: ${err.message || err}`, 'err');
   }
-  rankedUser = data.user;
-  await loadRankedProfile();
-  if (!rankedUser) return;
-  await loadRankedLeaderboard();
-  rankedMsg('ranked-auth-msg', 'Signed in.', 'ok');
 };
 
 const rankedSignUp = async () => {
@@ -1534,41 +1575,52 @@ const rankedSignUp = async () => {
   }
   const emailRedirectTo = getAuthRedirectUrl();
   rankedMsg('ranked-auth-msg', 'Creating account...');
-  const { data, error } = await sb.auth.signUp({
-    email: $('ranked-email').value.trim(),
-    password: $('ranked-password').value,
-    options: {
-      ...(emailRedirectTo ? { emailRedirectTo } : {}),
-      data: { username },
-    },
-  });
-  if (error) {
-    rankedMsg('ranked-auth-msg', error.message, 'err');
-    return;
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email: $('ranked-email').value.trim(),
+      password: $('ranked-password').value,
+      options: {
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
+        data: { username },
+      },
+    });
+    if (error) {
+      rankedMsg('ranked-auth-msg', error.message, 'err');
+      return;
+    }
+    if (!data.session) {
+      rankedMsg('ranked-auth-msg', 'Check your email to confirm the account. If the link opens a blank or failed localhost page, the account is usually still confirmed; return here and sign in.', 'ok');
+      return;
+    }
+    rankedUser = data.user;
+    const profileLoaded = await loadRankedProfile();
+    if (!profileLoaded || !rankedUser) return;
+    await updateRankedProfile({ username }, false);
+    rankedMsg('ranked-auth-msg', 'Account created.', 'ok');
+  } catch (err) {
+    console.error('Sign up exception:', err);
+    rankedMsg('ranked-auth-msg', `Sign up error: ${err.message || err}`, 'err');
   }
-  if (!data.session) {
-    rankedMsg('ranked-auth-msg', 'Check your email to confirm the account. If the link opens a blank or failed localhost page, the account is usually still confirmed; return here and sign in.', 'ok');
-    return;
-  }
-  rankedUser = data.user;
-  await loadRankedProfile();
-  if (!rankedUser) return;
-  await updateRankedProfile({ username }, false);
-  rankedMsg('ranked-auth-msg', 'Account created.', 'ok');
 };
 
 const updateRankedProfile = async (changes, showMessage=true) => {
   if (!sb || !rankedUser) return false;
-  const { error } = await sb.from('profiles').update(changes).eq('id', rankedUser.id);
-  if (error) {
-    if (showMessage) rankedMsg('ranked-profile-msg', error.message, 'err');
+  try {
+    const { error } = await sb.from('profiles').update(changes).eq('id', rankedUser.id);
+    if (error) {
+      if (showMessage) rankedMsg('ranked-profile-msg', error.message, 'err');
+      return false;
+    }
+    const profileLoaded = await loadRankedProfile();
+    if (!profileLoaded || !rankedUser) return false;
+    if (showMessage) rankedMsg('ranked-profile-msg', 'Profile saved.', 'ok');
+    await loadRankedLeaderboard();
+    return true;
+  } catch (err) {
+    console.error('Update profile exception:', err);
+    if (showMessage) rankedMsg('ranked-profile-msg', `Save error: ${err.message || err}`, 'err');
     return false;
   }
-  await loadRankedProfile();
-  if (!rankedUser) return false;
-  if (showMessage) rankedMsg('ranked-profile-msg', 'Profile saved.', 'ok');
-  await loadRankedLeaderboard();
-  return true;
 };
 
 const drawAvatarCrop = () => {
