@@ -24,3 +24,5 @@ This folder is the repo-side Supabase setup for Open Chess.
 The browser must only use the Supabase anon key. Never commit or paste the service-role key into client code.
 
 The migration enables RLS and blocks browser clients from directly editing rating, wins, losses, or draws. Ranked results should go through the Edge Function.
+
+Deployment trigger: 2026-05-26T14:58:50Z
