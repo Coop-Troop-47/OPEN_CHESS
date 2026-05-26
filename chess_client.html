@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -152,6 +153,29 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .setting select,.setting input[type=number]{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:6px 8px;color:var(--text);font-size:13px}
 .setting select:focus,.setting input[type=number]:focus{outline:none;border-color:var(--accent)}
 .settings-grid{display:flex;flex-direction:column;gap:12px}
+
+/* Ranked */
+.ranked-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:10px}
+.ranked-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);margin-bottom:8px}
+.ranked-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.ranked-row:last-child{border-bottom:none}
+.ranked-user{display:flex;align-items:center;gap:8px;min-width:0}
+.ranked-avatar{width:34px;height:34px;border-radius:4px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text2);object-fit:cover;flex-shrink:0}
+.ranked-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ranked-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.ranked-rating{font-size:13px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.ranked-msg{font-size:11px;color:var(--text3);line-height:1.35;margin-top:8px}
+.ranked-msg.err{color:var(--red)}
+.ranked-msg.ok{color:var(--green)}
+.ranked-actions{display:flex;gap:6px;margin-top:8px}
+.ranked-actions .btn{padding:8px;font-size:12px}
+.ranked-form{display:flex;flex-direction:column;gap:8px}
+.ranked-form input{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);font-size:13px;width:100%}
+.ranked-form input:focus{outline:none;border-color:var(--accent)}
+.ranked-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.ranked-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px;text-align:center}
+.ranked-stat strong{display:block;font-size:14px;color:var(--text)}
+.ranked-stat span{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
 
 /* ── LOBBY ── */
 .lobby{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:100%;max-width:480px;margin:0 auto}
@@ -354,6 +378,11 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
         <h4>Online</h4>
         <p>P2P link</p>
       </div>
+      <div id="lm-ranked" class="lm-card" data-mode="ranked">
+        <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm1 2h12v2H6v-2z"/></svg>
+        <h4>Ranked</h4>
+        <p>Accounts & ELO</p>
+      </div>
     </div>
 
     <!-- Name inputs, dynamically shown based on mode -->
@@ -477,6 +506,61 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 
       <button id="btn-show-rooms" class="btn sec" style="margin-top:12px">Show Open Challenges</button>
     </div>
+
+    <!-- Ranked options -->
+    <div id="sect-ranked" class="lobby-sect">
+      <div id="ranked-auth" class="ranked-card">
+        <div class="ranked-title">Account</div>
+        <div class="ranked-form">
+          <input type="email" id="ranked-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="ranked-password" placeholder="Password" autocomplete="current-password">
+          <input type="text" id="ranked-username" placeholder="Username" maxlength="24" autocomplete="nickname">
+        </div>
+        <div class="ranked-actions">
+          <button id="ranked-sign-in" class="btn">Sign In</button>
+          <button id="ranked-sign-up" class="btn sec">Create</button>
+        </div>
+        <div id="ranked-auth-msg" class="ranked-msg">Create an account or sign in to use ranked features.</div>
+      </div>
+
+      <div id="ranked-profile" class="ranked-card" style="display:none">
+        <div class="ranked-title">Profile</div>
+        <div class="ranked-row">
+          <div class="ranked-user">
+            <img id="ranked-avatar-img" class="ranked-avatar" alt="" style="display:none">
+            <div id="ranked-avatar-fallback" class="ranked-avatar">?</div>
+            <div style="min-width:0">
+              <div id="ranked-display" class="ranked-name">Player</div>
+              <div id="ranked-handle" class="ranked-meta">@player</div>
+            </div>
+          </div>
+          <div id="ranked-rating" class="ranked-rating">1200</div>
+        </div>
+        <div class="ranked-stats">
+          <div class="ranked-stat"><strong id="ranked-wins">0</strong><span>Wins</span></div>
+          <div class="ranked-stat"><strong id="ranked-losses">0</strong><span>Losses</span></div>
+          <div class="ranked-stat"><strong id="ranked-draws">0</strong><span>Draws</span></div>
+          <div class="ranked-stat"><strong id="ranked-games">0</strong><span>Games</span></div>
+        </div>
+        <div class="ranked-form" style="margin-top:10px">
+          <input type="text" id="ranked-display-input" placeholder="Display name" maxlength="32">
+          <input type="text" id="ranked-username-input" placeholder="Username" maxlength="24">
+          <input type="file" id="ranked-avatar-file" accept="image/png,image/jpeg,image/webp">
+        </div>
+        <div class="ranked-actions">
+          <button id="ranked-save-profile" class="btn">Save Profile</button>
+          <button id="ranked-sign-out" class="btn sec">Sign Out</button>
+        </div>
+        <button id="ranked-play" class="btn sec" disabled title="Ranked matchmaking is the next step after account setup" style="margin-top:8px">Ranked Play Coming Next</button>
+        <div id="ranked-profile-msg" class="ranked-msg">Ranked games will use server-side result submission.</div>
+      </div>
+
+      <div class="ranked-card">
+        <div class="ranked-title">Leaderboard</div>
+        <div id="ranked-leaderboard"></div>
+        <button id="ranked-refresh" class="btn sec" style="margin-top:8px">Refresh Leaderboard</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── GAME VIEW ── -->
@@ -517,6 +601,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
         <div class="tabs">
           <div class="tab on" data-t="t-moves">Moves</div>
           <div class="tab" data-t="t-chat" id="tab-chat" style="display:none">Chat</div>
+          <div class="tab" data-t="t-ranked">Ranked</div>
           <div class="tab" data-t="t-settings">Settings</div>
         </div>
         <div id="t-moves" class="tab-bd on">
@@ -557,6 +642,16 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
               <input type="text" id="chat-in" placeholder="Type a message..." autocomplete="off">
               <button id="chat-send">Send</button>
             </div>
+          </div>
+        </div>
+        <div id="t-ranked" class="tab-bd">
+          <div class="ranked-card">
+            <div class="ranked-title">Account</div>
+            <div id="side-ranked-account" class="ranked-msg">Sign in from the Ranked lobby.</div>
+          </div>
+          <div class="ranked-card">
+            <div class="ranked-title">Leaderboard</div>
+            <div id="side-ranked-leaderboard"></div>
           </div>
         </div>
         <div id="t-settings" class="tab-bd">
@@ -930,6 +1025,10 @@ class MockConnection {
 
 const Peer = MockPeer;
 
+// ─── SUPABASE CONFIG ───
+const SUPABASE_URL = 'https://pwnblygocbbizpbscqig.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3bmJseWdvY2JiaXpwYnNjcWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE0MzIsImV4cCI6MjA5NTM3NzQzMn0.HbtM3SjKLaVpUDKHB44NxOBQbRH5cLfwwngEABPVAco';
+
 // ─── GLOBALS ───
 const chess = new Chess();
 let mode = 'local', myColor = 'w', myName = 'Player';
@@ -945,6 +1044,7 @@ let activeHcWMul = 1, activeHcBMul = 1, activeHcPiece = 'none';
 let roomScore = { w: 0, b: 0, draws: 0 }, gameResultRecorded = false;
 let isReconnecting = false, reconnectTimeout = null, guestReconnectInterval = null, lastRecvTime = 0;
 let intentionalDisconnect = false, opponentDisconnected = false, rematchBlockedReason = '';
+let sb = null, rankedUser = null, rankedProfile = null, rankedReady = false;
 
 // Encryption state
 let cryptoKey = null;
@@ -1095,6 +1195,235 @@ const setLastMoveColor = (color) => {
 const setShadows = (enabled) => {
   shadowsOn = enabled;
   document.body.classList.toggle('no-shadows', !shadowsOn);
+};
+
+// ─── RANKED / SUPABASE ───
+const rankedMsg = (id, text, kind='') => {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = `ranked-msg${kind ? ` ${kind}` : ''}`;
+};
+
+const cleanUsername = (value) => {
+  const cleaned = String(value || '').trim().replace(/[^A-Za-z0-9_]/g, '_').slice(0, 24);
+  return cleaned.length >= 3 ? cleaned : '';
+};
+
+const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+}[c]));
+
+const avatarInitial = (profile) =>
+  (profile?.display_name || profile?.username || rankedUser?.email || '?').trim().charAt(0).toUpperCase();
+
+const setRankedAvatar = (profile) => {
+  const img = $('ranked-avatar-img');
+  const fallback = $('ranked-avatar-fallback');
+  if (!img || !fallback) return;
+  fallback.textContent = avatarInitial(profile);
+  if (profile?.avatar_url) {
+    img.src = profile.avatar_url;
+    img.style.display = '';
+    fallback.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    fallback.style.display = '';
+  }
+};
+
+const renderLeaderboardRows = (profiles, targetId) => {
+  const el = $(targetId);
+  if (!el) return;
+  if (!profiles?.length) {
+    el.innerHTML = '<div class="ranked-msg">No ranked players yet.</div>';
+    return;
+  }
+  el.innerHTML = profiles.map((p, i) => {
+    const name = p.display_name || p.username || 'Player';
+    const avatar = p.avatar_url
+      ? `<img class="ranked-avatar" src="${esc(p.avatar_url)}" alt="">`
+      : `<div class="ranked-avatar">${esc(name.charAt(0).toUpperCase())}</div>`;
+    const games = (p.wins || 0) + (p.losses || 0) + (p.draws || 0);
+    return `<div class="ranked-row">
+      <div class="ranked-user">${avatar}<div style="min-width:0">
+        <div class="ranked-name">#${i + 1} ${esc(name)}</div>
+        <div class="ranked-meta">${p.wins || 0}W ${p.losses || 0}L ${p.draws || 0}D · ${games} games</div>
+      </div></div>
+      <div class="ranked-rating">${p.rating || 1200}</div>
+    </div>`;
+  }).join('');
+};
+
+const loadRankedLeaderboard = async () => {
+  if (!sb) return;
+  const { data, error } = await sb
+    .from('profiles')
+    .select('username, display_name, avatar_url, rating, wins, losses, draws')
+    .order('rating', { ascending: false })
+    .order('wins', { ascending: false })
+    .limit(20);
+  if (error) {
+    renderLeaderboardRows([], 'ranked-leaderboard');
+    renderLeaderboardRows([], 'side-ranked-leaderboard');
+    rankedMsg('ranked-auth-msg', `Leaderboard error: ${error.message}`, 'err');
+    return;
+  }
+  renderLeaderboardRows(data, 'ranked-leaderboard');
+  renderLeaderboardRows(data?.slice(0, 8), 'side-ranked-leaderboard');
+};
+
+const loadRankedProfile = async () => {
+  if (!sb || !rankedUser) {
+    rankedProfile = null;
+    renderRankedAuth();
+    return;
+  }
+  const { data, error } = await sb
+    .from('profiles')
+    .select('*')
+    .eq('id', rankedUser.id)
+    .single();
+  if (error) {
+    rankedMsg('ranked-profile-msg', `Profile error: ${error.message}`, 'err');
+    rankedProfile = null;
+  } else {
+    rankedProfile = data;
+  }
+  renderRankedAuth();
+};
+
+const renderRankedAuth = () => {
+  const signedIn = !!rankedUser;
+  show('ranked-auth', !signedIn);
+  show('ranked-profile', signedIn);
+  if (!signedIn) {
+    $('side-ranked-account').textContent = 'Sign in from the Ranked lobby.';
+    return;
+  }
+  const p = rankedProfile || {};
+  const name = p.display_name || p.username || rankedUser.email || 'Player';
+  $('ranked-display').textContent = name;
+  $('ranked-handle').textContent = p.username ? `@${p.username}` : rankedUser.email;
+  $('ranked-rating').textContent = p.rating ?? 1200;
+  $('ranked-wins').textContent = p.wins ?? 0;
+  $('ranked-losses').textContent = p.losses ?? 0;
+  $('ranked-draws').textContent = p.draws ?? 0;
+  $('ranked-games').textContent = (p.wins || 0) + (p.losses || 0) + (p.draws || 0);
+  $('ranked-display-input').value = p.display_name || '';
+  $('ranked-username-input').value = p.username || '';
+  $('side-ranked-account').textContent = `${name} · ${p.rating ?? 1200} ELO`;
+  setRankedAvatar(p);
+};
+
+const initSupabase = async () => {
+  if (!window.supabase?.createClient) {
+    rankedReady = false;
+    rankedMsg('ranked-auth-msg', 'Supabase client did not load. Check the CDN connection.', 'err');
+    return;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  rankedReady = true;
+  const { data } = await sb.auth.getSession();
+  rankedUser = data.session?.user || null;
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    rankedUser = session?.user || null;
+    await loadRankedProfile();
+    await loadRankedLeaderboard();
+  });
+  await loadRankedProfile();
+  await loadRankedLeaderboard();
+};
+
+const rankedSignIn = async () => {
+  if (!sb) return;
+  rankedMsg('ranked-auth-msg', 'Signing in...');
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('ranked-email').value.trim(),
+    password: $('ranked-password').value,
+  });
+  rankedMsg('ranked-auth-msg', error ? error.message : 'Signed in.', error ? 'err' : 'ok');
+};
+
+const rankedSignUp = async () => {
+  if (!sb) return;
+  const username = cleanUsername($('ranked-username').value);
+  if (!username) {
+    rankedMsg('ranked-auth-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
+    return;
+  }
+  rankedMsg('ranked-auth-msg', 'Creating account...');
+  const { data, error } = await sb.auth.signUp({
+    email: $('ranked-email').value.trim(),
+    password: $('ranked-password').value,
+    options: { data: { display_name: username } },
+  });
+  if (error) {
+    rankedMsg('ranked-auth-msg', error.message, 'err');
+    return;
+  }
+  if (!data.session) {
+    rankedMsg('ranked-auth-msg', 'Check your email to confirm the account, then sign in.', 'ok');
+    return;
+  }
+  rankedUser = data.user;
+  await loadRankedProfile();
+  await updateRankedProfile({ username, display_name: username }, false);
+  rankedMsg('ranked-auth-msg', 'Account created.', 'ok');
+};
+
+const updateRankedProfile = async (changes, showMessage=true) => {
+  if (!sb || !rankedUser) return false;
+  const { error } = await sb.from('profiles').update(changes).eq('id', rankedUser.id);
+  if (error) {
+    if (showMessage) rankedMsg('ranked-profile-msg', error.message, 'err');
+    return false;
+  }
+  await loadRankedProfile();
+  if (showMessage) rankedMsg('ranked-profile-msg', 'Profile saved.', 'ok');
+  await loadRankedLeaderboard();
+  return true;
+};
+
+const rankedSaveProfile = async () => {
+  if (!sb || !rankedUser) return;
+  const username = cleanUsername($('ranked-username-input').value);
+  const displayName = $('ranked-display-input').value.trim().slice(0, 32);
+  if (!username) {
+    rankedMsg('ranked-profile-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
+    return;
+  }
+  let avatar_url = rankedProfile?.avatar_url || null;
+  const file = $('ranked-avatar-file').files?.[0];
+  if (file) {
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+    const path = `${rankedUser.id}/avatar.${ext}`;
+    rankedMsg('ranked-profile-msg', 'Uploading avatar...');
+    const upload = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+    if (upload.error) {
+      rankedMsg('ranked-profile-msg', upload.error.message, 'err');
+      return;
+    }
+    avatar_url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+  }
+  await updateRankedProfile({
+    username,
+    display_name: displayName || username,
+    avatar_url,
+  });
+};
+
+const rankedSignOut = async () => {
+  if (!sb) return;
+  await sb.auth.signOut();
+  rankedUser = null;
+  rankedProfile = null;
+  renderRankedAuth();
+  rankedMsg('ranked-auth-msg', 'Signed out.');
 };
 
 // ─── TIMER ENGINE ───
@@ -1894,6 +2223,7 @@ document.querySelectorAll('.lm-card').forEach(card => {
     mode = card.dataset.mode;
     $('sect-local').classList.toggle('on', mode === 'local');
     $('sect-online').classList.toggle('on', mode === 'online');
+    $('sect-ranked').classList.toggle('on', mode === 'ranked');
     show('name-grp-single', mode === 'online');
     show('name-grp-double', mode === 'local');
     show('setting-auto-flip', mode === 'local');
@@ -1905,6 +2235,7 @@ document.querySelectorAll('.lm-card').forEach(card => {
         try { lobbyWs.close(); } catch(e){}
         lobbyWs = null;
       }
+      if (mode === 'ranked') loadRankedLeaderboard();
     }
   };
 });
@@ -1964,6 +2295,11 @@ $('chk-auto-flip').onchange = (e) => {
 $('last-move-color').oninput = (e) => setLastMoveColor(e.target.value);
 $('last-move-color').onchange = (e) => setLastMoveColor(e.target.value);
 $('chk-shadows').onchange = (e) => setShadows(e.target.checked);
+$('ranked-sign-in').onclick = rankedSignIn;
+$('ranked-sign-up').onclick = rankedSignUp;
+$('ranked-save-profile').onclick = rankedSaveProfile;
+$('ranked-sign-out').onclick = rankedSignOut;
+$('ranked-refresh').onclick = loadRankedLeaderboard;
 
 // Populate piece style dropdown
 const populatePieceSelect = () => {
@@ -2912,6 +3248,7 @@ window.onload = () => {
   setLastMoveColor(lastMoveColor);
   setShadows(shadowsOn);
   populatePieceSelect();
+  initSupabase();
 
   // Check for room invite in URL
   const params = new URLSearchParams(location.search);
