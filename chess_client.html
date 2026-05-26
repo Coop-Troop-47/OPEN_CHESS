@@ -1320,6 +1320,7 @@ const cleanUsername = (value) => {
   return cleaned.length >= 3 ? cleaned : '';
 };
 
+const LOCAL_APP_URL = 'http://localhost:5173/chess_client.html';
 const getAuthRedirectUrl = () => {
   if (location.protocol === 'file:') return null;
   return `${location.origin}${location.pathname}`;
@@ -1475,7 +1476,7 @@ const rankedSignUp = async () => {
   }
   const emailRedirectTo = getAuthRedirectUrl();
   if (!emailRedirectTo) {
-    rankedMsg('ranked-auth-msg', 'Open the hosted app URL before creating an account so the email confirmation link can return to the app.', 'err');
+    rankedMsg('ranked-auth-msg', `Run a local server first, then open ${LOCAL_APP_URL}. From the app folder: python3 -m http.server 5173`, 'err');
     return;
   }
   rankedMsg('ranked-auth-msg', 'Creating account...');
