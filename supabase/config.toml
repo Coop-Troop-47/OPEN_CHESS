@@ -9,8 +9,14 @@ max_rows = 1000
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000"]
+site_url = "https://coop-troop-47.github.io/OPEN_CHESS/chess_client.html"
+additional_redirect_urls = [
+  "https://coop-troop-47.github.io/OPEN_CHESS",
+  "https://coop-troop-47.github.io/OPEN_CHESS/",
+  "https://coop-troop-47.github.io/OPEN_CHESS/chess_client.html",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+]
 
 [functions.submit-ranked-result]
 verify_jwt = true

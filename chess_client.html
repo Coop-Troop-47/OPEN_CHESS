@@ -1320,6 +1320,11 @@ const cleanUsername = (value) => {
   return cleaned.length >= 3 ? cleaned : '';
 };
 
+const getAuthRedirectUrl = () => {
+  if (location.protocol === 'file:') return null;
+  return `${location.origin}${location.pathname}`;
+};
+
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({
   '&': '&amp;',
   '<': '&lt;',
@@ -1468,11 +1473,19 @@ const rankedSignUp = async () => {
     rankedMsg('ranked-auth-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
     return;
   }
+  const emailRedirectTo = getAuthRedirectUrl();
+  if (!emailRedirectTo) {
+    rankedMsg('ranked-auth-msg', 'Open the hosted app URL before creating an account so the email confirmation link can return to the app.', 'err');
+    return;
+  }
   rankedMsg('ranked-auth-msg', 'Creating account...');
   const { data, error } = await sb.auth.signUp({
     email: $('ranked-email').value.trim(),
     password: $('ranked-password').value,
-    options: { data: { display_name: username } },
+    options: {
+      emailRedirectTo,
+      data: { username, display_name: username },
+    },
   });
   if (error) {
     rankedMsg('ranked-auth-msg', error.message, 'err');
