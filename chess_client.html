@@ -1520,6 +1520,7 @@ const rankedSignIn = async () => {
   }
   rankedUser = data.user;
   await loadRankedProfile();
+  if (!rankedUser) return;
   await loadRankedLeaderboard();
   rankedMsg('ranked-auth-msg', 'Signed in.', 'ok');
 };
@@ -1551,6 +1552,7 @@ const rankedSignUp = async () => {
   }
   rankedUser = data.user;
   await loadRankedProfile();
+  if (!rankedUser) return;
   await updateRankedProfile({ username }, false);
   rankedMsg('ranked-auth-msg', 'Account created.', 'ok');
 };
@@ -1563,6 +1565,7 @@ const updateRankedProfile = async (changes, showMessage=true) => {
     return false;
   }
   await loadRankedProfile();
+  if (!rankedUser) return false;
   if (showMessage) rankedMsg('ranked-profile-msg', 'Profile saved.', 'ok');
   await loadRankedLeaderboard();
   return true;
