@@ -196,10 +196,17 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .ranked-form{display:flex;flex-direction:column;gap:8px}
 .ranked-form input{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);font-size:13px;width:100%}
 .ranked-form input:focus{outline:none;border-color:var(--accent)}
+.ranked-form label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.35px}
 .ranked-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
 .ranked-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px;text-align:center}
 .ranked-stat strong{display:block;font-size:14px;color:var(--text)}
 .ranked-stat span{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+.avatar-crop-wrap{position:relative;width:min(320px,72vw);aspect-ratio:1;margin:0 auto 14px;background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;touch-action:none}
+.avatar-crop-img{position:absolute;top:50%;left:50%;max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center}
+.avatar-crop-mask{position:absolute;inset:0;box-shadow:0 0 0 999px rgba(0,0,0,.42);border:2px solid rgba(255,255,255,.82);border-radius:50%;pointer-events:none}
+.crop-controls{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.crop-controls label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.35px;text-align:left}
+.crop-controls input[type=range]{width:100%}
 
 /* ── LOBBY ── */
 .lobby{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:100%;max-width:480px;margin:0 auto}
@@ -600,8 +607,11 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
           <div class="ranked-stat"><strong id="ranked-games">0</strong><span>Games</span></div>
         </div>
         <div class="ranked-form" style="margin-top:10px">
+          <label for="ranked-display-input">Display name</label>
           <input type="text" id="ranked-display-input" placeholder="Display name" maxlength="32">
+          <label for="ranked-username-input">Username</label>
           <input type="text" id="ranked-username-input" placeholder="Username" maxlength="24">
+          <label for="ranked-avatar-file">Profile picture</label>
           <input type="file" id="ranked-avatar-file" accept="image/png,image/jpeg,image/webp">
         </div>
         <div class="ranked-actions">
@@ -765,6 +775,25 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
     <div id="dlg-btns" class="modal-btns">
       <button id="dlg-ok" class="btn">OK</button>
       <button id="dlg-cancel" class="btn sec" style="display:none">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Avatar Crop Modal -->
+<div id="m-avatar-crop" class="modal-bg">
+  <div class="modal">
+    <h3>Position Profile Picture</h3>
+    <div id="avatar-crop-wrap" class="avatar-crop-wrap">
+      <img id="avatar-crop-img" class="avatar-crop-img" alt="">
+      <div class="avatar-crop-mask"></div>
+    </div>
+    <div class="crop-controls">
+      <label for="avatar-crop-zoom">Zoom</label>
+      <input type="range" id="avatar-crop-zoom" min="1" max="3" step="0.01" value="1">
+    </div>
+    <div class="modal-btns">
+      <button id="avatar-crop-apply" class="btn">Use Image</button>
+      <button id="avatar-crop-cancel" class="btn sec">Cancel</button>
     </div>
   </div>
 </div>
@@ -1095,6 +1124,19 @@ let roomScore = { w: 0, b: 0, draws: 0 }, gameResultRecorded = false;
 let isReconnecting = false, reconnectTimeout = null, guestReconnectInterval = null, lastRecvTime = 0;
 let intentionalDisconnect = false, opponentDisconnected = false, rematchBlockedReason = '';
 let sb = null, rankedUser = null, rankedProfile = null, rankedReady = false;
+let avatarCrop = {
+  file: null,
+  url: null,
+  img: null,
+  x: 0,
+  y: 0,
+  scale: 1,
+  minScale: 1,
+  dragging: false,
+  lastX: 0,
+  lastY: 0,
+  output: null
+};
 
 // Encryption state
 let cryptoKey = null;
@@ -1336,6 +1378,13 @@ const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({
 const avatarInitial = (profile) =>
   (profile?.display_name || profile?.username || rankedUser?.email || '?').trim().charAt(0).toUpperCase();
 
+const isGeneratedUsername = (value) => /^player_[a-f0-9]{12}$/i.test(value || '');
+
+const profileHandle = (profile) => {
+  if (!profile?.username || isGeneratedUsername(profile.username)) return '';
+  return `@${profile.username}`;
+};
+
 const setRankedAvatar = (profile) => {
   const img = $('ranked-avatar-img');
   const fallback = $('ranked-avatar-fallback');
@@ -1423,15 +1472,17 @@ const renderRankedAuth = () => {
   }
   const p = rankedProfile || {};
   const name = p.display_name || p.username || rankedUser.email || 'Player';
+  const handle = profileHandle(p);
   $('ranked-display').textContent = name;
-  $('ranked-handle').textContent = p.username ? `@${p.username}` : rankedUser.email;
+  $('ranked-handle').textContent = handle || rankedUser.email || '';
+  $('ranked-handle').style.display = handle ? '' : 'none';
   $('ranked-rating').textContent = p.rating ?? 1200;
   $('ranked-wins').textContent = p.wins ?? 0;
   $('ranked-losses').textContent = p.losses ?? 0;
   $('ranked-draws').textContent = p.draws ?? 0;
   $('ranked-games').textContent = (p.wins || 0) + (p.losses || 0) + (p.draws || 0);
   $('ranked-display-input').value = p.display_name || '';
-  $('ranked-username-input').value = p.username || '';
+  $('ranked-username-input').value = isGeneratedUsername(p.username) ? '' : (p.username || '');
   $('side-ranked-account').textContent = `${name} · ${p.rating ?? 1200} ELO`;
   setRankedAvatar(p);
   updateMenuAccount();
@@ -1510,6 +1561,78 @@ const updateRankedProfile = async (changes, showMessage=true) => {
   return true;
 };
 
+const drawAvatarCrop = () => {
+  const img = $('avatar-crop-img');
+  if (!avatarCrop.img) return;
+  img.style.width = `${avatarCrop.img.naturalWidth * avatarCrop.scale}px`;
+  img.style.height = `${avatarCrop.img.naturalHeight * avatarCrop.scale}px`;
+  img.style.transform = `translate(-50%, -50%) translate(${avatarCrop.x}px, ${avatarCrop.y}px)`;
+};
+
+const clampAvatarCrop = () => {
+  const wrap = $('avatar-crop-wrap');
+  if (!wrap || !avatarCrop.img) return;
+  const size = wrap.clientWidth;
+  const w = avatarCrop.img.naturalWidth * avatarCrop.scale;
+  const h = avatarCrop.img.naturalHeight * avatarCrop.scale;
+  avatarCrop.x = Math.max((size - w) / 2, Math.min((w - size) / 2, avatarCrop.x));
+  avatarCrop.y = Math.max((size - h) / 2, Math.min((h - size) / 2, avatarCrop.y));
+};
+
+const renderAvatarCrop = () => {
+  clampAvatarCrop();
+  drawAvatarCrop();
+};
+
+const closeAvatarCrop = () => {
+  $('m-avatar-crop').classList.remove('on');
+  if (avatarCrop.url) URL.revokeObjectURL(avatarCrop.url);
+  avatarCrop.url = null;
+  avatarCrop.img = null;
+  avatarCrop.output = null;
+};
+
+const openAvatarCrop = (file) => new Promise(resolve => {
+  closeAvatarCrop();
+  avatarCrop.file = file;
+  avatarCrop.output = resolve;
+  avatarCrop.url = URL.createObjectURL(file);
+  avatarCrop.x = 0;
+  avatarCrop.y = 0;
+  avatarCrop.scale = 1;
+  const img = $('avatar-crop-img');
+  img.onload = () => {
+    avatarCrop.img = img;
+    const size = $('avatar-crop-wrap').clientWidth;
+    avatarCrop.minScale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+    avatarCrop.scale = avatarCrop.minScale;
+    $('avatar-crop-zoom').min = avatarCrop.minScale.toFixed(2);
+    $('avatar-crop-zoom').max = (avatarCrop.minScale * 3).toFixed(2);
+    $('avatar-crop-zoom').value = avatarCrop.scale.toFixed(2);
+    renderAvatarCrop();
+  };
+  img.src = avatarCrop.url;
+  $('m-avatar-crop').classList.add('on');
+});
+
+const avatarCropToBlob = () => new Promise(resolve => {
+  const wrap = $('avatar-crop-wrap');
+  const size = wrap.clientWidth;
+  const out = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = out;
+  canvas.height = out;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1b1b1f';
+  ctx.fillRect(0, 0, out, out);
+  const w = avatarCrop.img.naturalWidth * avatarCrop.scale;
+  const h = avatarCrop.img.naturalHeight * avatarCrop.scale;
+  const dx = ((size - w) / 2 + avatarCrop.x) * (out / size);
+  const dy = ((size - h) / 2 + avatarCrop.y) * (out / size);
+  ctx.drawImage(avatarCrop.img, dx, dy, w * (out / size), h * (out / size));
+  canvas.toBlob(resolve, 'image/jpeg', 0.9);
+});
+
 const rankedSaveProfile = async () => {
   if (!sb || !rankedUser) return;
   const username = cleanUsername($('ranked-username-input').value);
@@ -1519,10 +1642,9 @@ const rankedSaveProfile = async () => {
     return;
   }
   let avatar_url = rankedProfile?.avatar_url || null;
-  const file = $('ranked-avatar-file').files?.[0];
+  const file = avatarCrop.file;
   if (file) {
-    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
-    const path = `${rankedUser.id}/avatar.${ext}`;
+    const path = `${rankedUser.id}/avatar.jpg`;
     rankedMsg('ranked-profile-msg', 'Uploading avatar...');
     const upload = await sb.storage.from('avatars').upload(path, file, { upsert: true });
     if (upload.error) {
@@ -1536,6 +1658,8 @@ const rankedSaveProfile = async () => {
     display_name: displayName || username,
     avatar_url,
   });
+  $('ranked-avatar-file').value = '';
+  avatarCrop.file = null;
 };
 
 const rankedSignOut = async () => {
@@ -2405,6 +2529,54 @@ $('ranked-sign-up').onclick = rankedSignUp;
 $('ranked-save-profile').onclick = rankedSaveProfile;
 $('ranked-sign-out').onclick = rankedSignOut;
 $('ranked-refresh').onclick = loadRankedLeaderboard;
+$('ranked-avatar-file').onchange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    rankedMsg('ranked-profile-msg', 'Choose an image file.', 'err');
+    e.target.value = '';
+    return;
+  }
+  const blob = await openAvatarCrop(file);
+  if (!blob) {
+    e.target.value = '';
+    return;
+  }
+  avatarCrop.file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+  rankedMsg('ranked-profile-msg', 'Profile picture ready. Save profile to upload.', 'ok');
+};
+$('avatar-crop-zoom').oninput = (e) => {
+  avatarCrop.scale = parseFloat(e.target.value);
+  renderAvatarCrop();
+};
+$('avatar-crop-wrap').onpointerdown = (e) => {
+  avatarCrop.dragging = true;
+  avatarCrop.lastX = e.clientX;
+  avatarCrop.lastY = e.clientY;
+  $('avatar-crop-wrap').setPointerCapture(e.pointerId);
+};
+$('avatar-crop-wrap').onpointermove = (e) => {
+  if (!avatarCrop.dragging) return;
+  avatarCrop.x += e.clientX - avatarCrop.lastX;
+  avatarCrop.y += e.clientY - avatarCrop.lastY;
+  avatarCrop.lastX = e.clientX;
+  avatarCrop.lastY = e.clientY;
+  renderAvatarCrop();
+};
+$('avatar-crop-wrap').onpointerup = () => { avatarCrop.dragging = false; };
+$('avatar-crop-wrap').onpointercancel = () => { avatarCrop.dragging = false; };
+$('avatar-crop-cancel').onclick = () => {
+  const resolve = avatarCrop.output;
+  closeAvatarCrop();
+  $('ranked-avatar-file').value = '';
+  if (resolve) resolve(null);
+};
+$('avatar-crop-apply').onclick = async () => {
+  const resolve = avatarCrop.output;
+  const blob = await avatarCropToBlob();
+  closeAvatarCrop();
+  if (resolve) resolve(blob);
+};
 
 // Populate piece style dropdown
 const populatePieceSelect = () => {
