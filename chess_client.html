@@ -36,17 +36,41 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.hdr-left{display:flex;align-items:center;gap:10px}
 .hdr-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;letter-spacing:-0.3px}
 .hdr-logo svg{width:22px;height:22px;fill:var(--text)}
 .hdr-right{display:flex;align-items:center;gap:10px}
 .hdr-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;font-size:12px;font-weight:600;transition:background .15s}
 .hdr-btn:hover{background:var(--bg4)}
 .hdr-btn svg{width:14px;height:14px;fill:currentColor}
+.icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;transition:background .15s,color .15s}
+.icon-btn:hover{background:var(--bg4);color:var(--text)}
+.icon-btn svg{width:18px;height:18px;fill:currentColor}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
 .dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
 .dot.err{background:var(--red)}
 .dot.wait{background:var(--yellow);animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.4}}
+
+/* ── APP MENU ── */
+.menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:900;opacity:0;pointer-events:none;transition:opacity .18s}
+.menu-backdrop.on{opacity:1;pointer-events:auto}
+.app-menu{position:fixed;top:0;left:0;bottom:0;width:min(310px,86vw);background:var(--bg2);border-right:1px solid var(--border);z-index:901;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .2s ease;box-shadow:12px 0 28px rgba(0,0,0,.35)}
+.app-menu.on{transform:translateX(0)}
+.menu-head{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;border-bottom:1px solid var(--border)}
+.menu-title{font-weight:800;font-size:14px}
+.menu-nav{padding:10px;display:flex;flex-direction:column;gap:6px}
+.menu-item{width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid transparent;color:var(--text2);border-radius:5px;padding:10px;cursor:pointer;text-align:left;font-weight:700;transition:background .15s,border-color .15s,color .15s}
+.menu-item:hover{background:var(--bg3);color:var(--text)}
+.menu-item.on{background:var(--accent-dim);border-color:rgba(91,138,240,.45);color:var(--text)}
+.menu-item svg{width:18px;height:18px;fill:currentColor;flex-shrink:0}
+.menu-spacer{flex:1}
+.menu-account{margin:10px;padding:10px;border:1px solid var(--border);background:var(--bg3);border-radius:5px;display:flex;align-items:center;gap:10px;color:var(--text);cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+.menu-account:hover{background:var(--bg4);border-color:var(--border2)}
+.menu-account.on{border-color:rgba(91,138,240,.55);background:var(--accent-dim)}
+.menu-account-avatar{width:34px;height:34px;border-radius:4px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text2);object-fit:cover;flex-shrink:0}
+.menu-account-main{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-account-sub{font-size:11px;color:var(--text3);margin-top:1px}
 
 /* ── MAIN LAYOUT ── */
 main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:16px;gap:16px}
@@ -180,14 +204,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 /* ── LOBBY ── */
 .lobby{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:100%;max-width:480px;margin:0 auto}
 .lobby h2{font-size:18px;text-align:center;margin-bottom:18px;font-weight:700}
-.lobby-modes{display:flex;gap:8px;margin-bottom:16px}
-.lm-card{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;cursor:pointer;text-align:center;transition:all .15s}
-.lm-card:hover{border-color:var(--text3)}
-.lm-card.on{border-color:var(--accent);background:var(--accent-dim)}
-.lm-card svg{width:24px;height:24px;fill:var(--text2);margin-bottom:4px}
-.lm-card.on svg{fill:var(--accent)}
-.lm-card h4{font-size:13px;font-weight:700;margin-bottom:2px}
-.lm-card p{font-size:11px;color:var(--text3)}
+.screen-kicker{text-align:center;color:var(--text3);font-size:12px;margin:-10px 0 16px}
 
 .lobby-sect{display:none}.lobby-sect.on{display:block}
 .inp-grp{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
@@ -339,6 +356,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
   .hdr{padding:0 10px;height:42px}
   .hdr-logo{font-size:13px}
   .hdr-btn span{display:none}
+  .menu-head{height:42px}
   .timer{font-size:15px;padding:2px 8px;min-width:60px}
   .pbar-name{max-width:80px;font-size:12px}
 }
@@ -347,9 +365,14 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 <body>
 
 <header class="hdr">
-  <div class="hdr-logo">
-    <svg viewBox="0 0 24 24"><path d="M12 2c-1.66 0-3 1.34-3 3 0 .8.34 1.52.88 2.03C8.16 7.74 7 9.25 7 11c0 1.25.5 2.39 1.32 3.23C7.26 14.78 6 16.48 6 18.5V21h12v-2.5c0-2.02-1.26-3.72-2.32-4.27.82-.84 1.32-1.98 1.32-3.23 0-1.75-1.16-3.26-2.88-3.97.54-.51.88-1.23.88-2.03 0-1.66-1.34-3-3-3z"/></svg>
-    Chess
+  <div class="hdr-left">
+    <button id="menu-open" class="icon-btn" title="Open menu">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+    </button>
+    <div class="hdr-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2c-1.66 0-3 1.34-3 3 0 .8.34 1.52.88 2.03C8.16 7.74 7 9.25 7 11c0 1.25.5 2.39 1.32 3.23C7.26 14.78 6 16.48 6 18.5V21h12v-2.5c0-2.02-1.26-3.72-2.32-4.27.82-.84 1.32-1.98 1.32-3.23 0-1.75-1.16-3.26-2.88-3.97.54-.51.88-1.23.88-2.03 0-1.66-1.34-3-3-3z"/></svg>
+      <span id="app-title">Local Chess</span>
+    </div>
   </div>
   <div class="hdr-right">
     <div id="snd-btn" class="hdr-btn" title="Toggle sound">
@@ -363,29 +386,47 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
   </div>
 </header>
 
+<div id="menu-backdrop" class="menu-backdrop"></div>
+<aside id="app-menu" class="app-menu" aria-label="App menu">
+  <div class="menu-head">
+    <div class="menu-title">Open Chess</div>
+    <button id="menu-close" class="icon-btn" title="Close menu">
+      <svg viewBox="0 0 24 24"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.41L10.59 13.41 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29l6.3 6.3 6.29-6.3 1.42 1.42z"/></svg>
+    </button>
+  </div>
+  <nav class="menu-nav">
+    <button id="nav-local" class="menu-item on" data-menu-mode="local">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      Local
+    </button>
+    <button id="nav-online" class="menu-item" data-menu-mode="online">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.93 7h-3.02a15.7 15.7 0 0 0-1.38-3.56A8.04 8.04 0 0 1 18.93 9zM12 4.04c.83 1.2 1.48 2.86 1.82 4.96h-3.64C10.52 6.9 11.17 5.24 12 4.04zM4.26 14A8.3 8.3 0 0 1 4 12c0-.68.09-1.35.26-2h3.42A17.4 17.4 0 0 0 7.56 12c0 .69.04 1.36.12 2H4.26zm.81 1h3.02c.33 1.33.8 2.54 1.38 3.56A8.04 8.04 0 0 1 5.07 15zm3.02-6H5.07a8.04 8.04 0 0 1 4.4-3.56A15.7 15.7 0 0 0 8.09 9zM12 19.96c-.83-1.2-1.48-2.86-1.82-4.96h3.64c-.34 2.1-.99 3.76-1.82 4.96zM14.24 14H9.76A15.7 15.7 0 0 1 9.62 12c0-.7.05-1.37.14-2h4.48c.09.63.14 1.3.14 2s-.05 1.37-.14 2zm.29 4.56c.58-1.02 1.05-2.23 1.38-3.56h3.02a8.04 8.04 0 0 1-4.4 3.56zM16.32 14c.08-.64.12-1.31.12-2s-.04-1.36-.12-2h3.42c.17.65.26 1.32.26 2s-.09 1.35-.26 2h-3.42z"/></svg>
+      Online
+    </button>
+    <button id="nav-ranked" class="menu-item" data-menu-mode="ranked">
+      <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm1 2h12v2H6v-2z"/></svg>
+      Ranked
+    </button>
+  </nav>
+  <div class="menu-spacer"></div>
+  <button id="menu-account" class="menu-account" data-menu-mode="account">
+    <div id="menu-account-fallback" class="menu-account-avatar">?</div>
+    <img id="menu-account-img" class="menu-account-avatar" alt="" style="display:none">
+    <div style="min-width:0">
+      <div id="menu-account-main" class="menu-account-main">Sign in</div>
+      <div id="menu-account-sub" class="menu-account-sub">Account management</div>
+    </div>
+  </button>
+</aside>
+
 <main>
   <!-- ── LOBBY ── -->
   <div id="lobby" class="lobby">
-    <h2>New Game</h2>
-    <div class="lobby-modes">
-      <div id="lm-local" class="lm-card on" data-mode="local">
-        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-        <h4>Local</h4>
-        <p>Same screen</p>
-      </div>
-      <div id="lm-online" class="lm-card" data-mode="online">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.22.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-        <h4>Online</h4>
-        <p>P2P link</p>
-      </div>
-      <div id="lm-ranked" class="lm-card" data-mode="ranked">
-        <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm1 2h12v2H6v-2z"/></svg>
-        <h4>Ranked</h4>
-        <p>Accounts & ELO</p>
-      </div>
-    </div>
+    <h2 id="screen-title">Local</h2>
+    <div id="screen-kicker" class="screen-kicker">Pass-and-play on this screen</div>
 
     <!-- Name inputs, dynamically shown based on mode -->
+    <div id="setup-options">
     <div id="name-grp-single" class="inp-grp" style="display:none">
       <label>Your Name</label>
       <input type="text" id="my-name" value="Player" maxlength="20">
@@ -435,6 +476,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
       <div class="inp-grp"><label>Minutes</label><input type="number" id="tc-min" value="10" min="0" max="180" step="1"></div>
       <div class="inp-grp"><label>Seconds</label><input type="number" id="tc-sec" value="0" min="0" max="59" step="1"></div>
       <div class="inp-grp"><label>Increment</label><input type="number" id="tc-inc" value="0" min="0" max="60" step="1"></div>
+    </div>
     </div>
 
     <!-- Local options -->
@@ -509,8 +551,23 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 
     <!-- Ranked options -->
     <div id="sect-ranked" class="lobby-sect">
+      <div class="ranked-card">
+        <div class="ranked-title">Ranked Play</div>
+        <button id="ranked-play" class="btn sec" disabled title="Ranked matchmaking is the next step after account setup">Ranked Matchmaking Coming Next</button>
+        <div class="ranked-msg">Accounts, profiles, avatars, and leaderboard are wired. The next step is authoritative ranked game rooms.</div>
+      </div>
+
+      <div class="ranked-card">
+        <div class="ranked-title">Leaderboard</div>
+        <div id="ranked-leaderboard"></div>
+        <button id="ranked-refresh" class="btn sec" style="margin-top:8px">Refresh Leaderboard</button>
+      </div>
+    </div>
+
+    <!-- Account management -->
+    <div id="sect-account" class="lobby-sect">
       <div id="ranked-auth" class="ranked-card">
-        <div class="ranked-title">Account</div>
+        <div class="ranked-title">Sign In</div>
         <div class="ranked-form">
           <input type="email" id="ranked-email" placeholder="Email" autocomplete="email">
           <input type="password" id="ranked-password" placeholder="Password" autocomplete="current-password">
@@ -524,7 +581,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
       </div>
 
       <div id="ranked-profile" class="ranked-card" style="display:none">
-        <div class="ranked-title">Profile</div>
+        <div class="ranked-title">Account Management</div>
         <div class="ranked-row">
           <div class="ranked-user">
             <img id="ranked-avatar-img" class="ranked-avatar" alt="" style="display:none">
@@ -551,14 +608,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
           <button id="ranked-save-profile" class="btn">Save Profile</button>
           <button id="ranked-sign-out" class="btn sec">Sign Out</button>
         </div>
-        <button id="ranked-play" class="btn sec" disabled title="Ranked matchmaking is the next step after account setup" style="margin-top:8px">Ranked Play Coming Next</button>
-        <div id="ranked-profile-msg" class="ranked-msg">Ranked games will use server-side result submission.</div>
-      </div>
-
-      <div class="ranked-card">
-        <div class="ranked-title">Leaderboard</div>
-        <div id="ranked-leaderboard"></div>
-        <button id="ranked-refresh" class="btn sec" style="margin-top:8px">Refresh Leaderboard</button>
+        <div id="ranked-profile-msg" class="ranked-msg">Manage your profile and ranked identity.</div>
       </div>
     </div>
   </div>
@@ -1197,6 +1247,66 @@ const setShadows = (enabled) => {
   document.body.classList.toggle('no-shadows', !shadowsOn);
 };
 
+// ─── APP NAVIGATION ───
+const SCREEN_COPY = {
+  local: { title: 'Local', kicker: 'Pass-and-play on this screen' },
+  online: { title: 'Online', kicker: 'Create or join a peer-to-peer game' },
+  ranked: { title: 'Ranked', kicker: 'Profiles, ratings, and leaderboard' },
+  account: { title: 'Account', kicker: 'Sign in and manage your chess profile' }
+};
+
+const setMenuOpen = (open) => {
+  $('app-menu').classList.toggle('on', open);
+  $('menu-backdrop').classList.toggle('on', open);
+};
+
+const updateMenuAccount = () => {
+  const name = rankedProfile?.display_name || rankedProfile?.username || rankedUser?.email || 'Sign in';
+  const signedIn = !!rankedUser;
+  $('menu-account-main').textContent = signedIn ? name : 'Sign in';
+  $('menu-account-sub').textContent = signedIn
+    ? `${rankedProfile?.rating ?? 1200} ELO`
+    : 'Account management';
+  $('menu-account-fallback').textContent = signedIn ? avatarInitial(rankedProfile) : '?';
+  if (signedIn && rankedProfile?.avatar_url) {
+    $('menu-account-img').src = rankedProfile.avatar_url;
+    $('menu-account-img').style.display = '';
+    $('menu-account-fallback').style.display = 'none';
+  } else {
+    $('menu-account-img').style.display = 'none';
+    $('menu-account-fallback').style.display = '';
+  }
+};
+
+const setAppMode = (nextMode, closeMenu=true) => {
+  mode = nextMode;
+  const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
+  $('screen-title').textContent = copy.title;
+  $('screen-kicker').textContent = copy.kicker;
+  $('app-title').textContent = `${copy.title} Chess`;
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.classList.toggle('on', item.dataset.menuMode === mode);
+  });
+  $('menu-account').classList.toggle('on', mode === 'account');
+  $('sect-local').classList.toggle('on', mode === 'local');
+  $('sect-online').classList.toggle('on', mode === 'online');
+  $('sect-ranked').classList.toggle('on', mode === 'ranked');
+  $('sect-account').classList.toggle('on', mode === 'account');
+  show('setup-options', mode === 'local' || mode === 'online');
+  show('name-grp-single', mode === 'online');
+  show('name-grp-double', mode === 'local');
+  show('setting-auto-flip', mode === 'local');
+
+  if (mode === 'online') {
+    initLobby();
+  } else if (lobbyWs) {
+    try { lobbyWs.close(); } catch(e){}
+    lobbyWs = null;
+  }
+  if (mode === 'ranked' || mode === 'account') loadRankedLeaderboard();
+  if (closeMenu) setMenuOpen(false);
+};
+
 // ─── RANKED / SUPABASE ───
 const rankedMsg = (id, text, kind='') => {
   const el = $(id);
@@ -1303,6 +1413,7 @@ const renderRankedAuth = () => {
   show('ranked-profile', signedIn);
   if (!signedIn) {
     $('side-ranked-account').textContent = 'Sign in from the Ranked lobby.';
+    updateMenuAccount();
     return;
   }
   const p = rankedProfile || {};
@@ -1318,6 +1429,7 @@ const renderRankedAuth = () => {
   $('ranked-username-input').value = p.username || '';
   $('side-ranked-account').textContent = `${name} · ${p.rating ?? 1200} ELO`;
   setRankedAvatar(p);
+  updateMenuAccount();
 };
 
 const initSupabase = async () => {
@@ -2215,30 +2327,14 @@ const startReconnectWatch = () => {
   reconnectTimeout = setTimeout(finishDisconnectWin, RECONNECT_GRACE_MS);
 };
 
-// ─── LOBBY EVENTS ───
-document.querySelectorAll('.lm-card').forEach(card => {
-  card.onclick = () => {
-    document.querySelectorAll('.lm-card').forEach(c => c.classList.remove('on'));
-    card.classList.add('on');
-    mode = card.dataset.mode;
-    $('sect-local').classList.toggle('on', mode === 'local');
-    $('sect-online').classList.toggle('on', mode === 'online');
-    $('sect-ranked').classList.toggle('on', mode === 'ranked');
-    show('name-grp-single', mode === 'online');
-    show('name-grp-double', mode === 'local');
-    show('setting-auto-flip', mode === 'local');
-    
-    if (mode === 'online') {
-      initLobby();
-    } else {
-      if (lobbyWs) {
-        try { lobbyWs.close(); } catch(e){}
-        lobbyWs = null;
-      }
-      if (mode === 'ranked') loadRankedLeaderboard();
-    }
-  };
+// ─── APP NAV EVENTS ───
+$('menu-open').onclick = () => setMenuOpen(true);
+$('menu-close').onclick = () => setMenuOpen(false);
+$('menu-backdrop').onclick = () => setMenuOpen(false);
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.onclick = () => setAppMode(item.dataset.menuMode);
 });
+$('menu-account').onclick = () => setAppMode('account');
 
 // Time control buttons
 document.querySelectorAll('.tc-btn').forEach(btn => {
@@ -3248,13 +3344,14 @@ window.onload = () => {
   setLastMoveColor(lastMoveColor);
   setShadows(shadowsOn);
   populatePieceSelect();
+  setAppMode('local', false);
   initSupabase();
 
   // Check for room invite in URL
   const params = new URLSearchParams(location.search);
   const room = params.get('room');
   if (room) {
-    $('lm-online').click();
+    setAppMode('online', false);
     joinRoom(room);
   }
 };
