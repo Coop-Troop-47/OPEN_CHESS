@@ -1452,15 +1452,13 @@ const loadRankedProfile = async () => {
         .single();
       if (error) {
         if (error.code === 'PGRST116') {
-          try {
-            await sb.auth.signOut();
-          } catch (signOutErr) {
-            console.error('SignOut error:', signOutErr);
-          }
           rankedUser = null;
           rankedProfile = null;
           renderRankedAuth();
           rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
+          sb.auth.signOut().catch(signOutErr => {
+            console.error('SignOut background error:', signOutErr);
+          });
           return false;
         }
         rankedMsg('ranked-profile-msg', `Profile error: ${error.message}`, 'err');
