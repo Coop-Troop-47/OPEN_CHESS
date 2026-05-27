@@ -4,6 +4,9 @@ type RankedResult = 'white' | 'black' | 'draw' | 'aborted';
 type ResultAlias = RankedResult | 'w' | 'b' | 'd';
 
 type ResultBody = {
+  action?: 'submit_result' | 'resolve_disconnect';
+  room_id?: string;
+  roomId?: string;
   white_id?: string;
   black_id?: string;
   whiteId?: string;
@@ -65,6 +68,37 @@ Deno.serve(async (req) => {
   }
 
   const body = await req.json().catch(() => null) as ResultBody | null;
+  const action = body?.action ?? 'submit_result';
+  const roomId = body?.room_id ?? body?.roomId ?? null;
+
+  const admin = createClient(supabaseUrl, serviceRoleKey);
+
+  if (action === 'resolve_disconnect') {
+    if (!body || !roomId) {
+      return Response.json({ error: 'Missing room_id' }, {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
+    const { data, error } = await admin.rpc('resolve_ranked_disconnect', {
+      p_room_id: roomId,
+      p_reporter_id: user.id,
+      p_pgn: body.pgn ?? null,
+      p_final_fen: body.final_fen ?? null,
+      p_time_control: body.time_control ?? null,
+    });
+
+    if (error) {
+      return Response.json({ error: error.message }, {
+        status: 500,
+        headers: corsHeaders,
+      });
+    }
+
+    return Response.json({ success: true, ...data }, { headers: corsHeaders });
+  }
+
   const whiteId = body?.white_id ?? body?.whiteId;
   const blackId = body?.black_id ?? body?.blackId;
   const result = body?.result ? normalizeResult(body.result) : null;
@@ -90,9 +124,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey);
-
-  const { data, error } = await admin.rpc('record_ranked_result', {
+  const { data, error } = await admin.rpc('record_ranked_result_once', {
+    p_room_id: roomId,
     p_white_id: whiteId,
     p_black_id: blackId,
     p_result: result,
