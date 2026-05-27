@@ -1135,6 +1135,8 @@ let lastMoveColor = '#ffff00', shadowsOn = true;
 let peer = null, conn = null, isHost = false, roomId = null;
 let gameOver = false, gameOverReason = '';
 let opponentName = 'Opponent';
+let myAvatarUrl = null;
+let opponentAvatarUrl = null;
 let activeTC = null;
 let activeHcWMul = 1, activeHcBMul = 1, activeHcPiece = 'none';
 let roomScore = { w: 0, b: 0, draws: 0 }, gameResultRecorded = false;
@@ -1445,6 +1447,24 @@ const setRankedAvatar = (profile) => {
   }
 };
 
+const setPlayerAvatar = (elId, avatarUrl, fallbackLetter) => {
+  const el = $(elId);
+  if (!el) return;
+  if (avatarUrl) {
+    el.style.backgroundImage = `url(${avatarUrl})`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.style.border = 'none';
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = '';
+    el.textContent = fallbackLetter || '?';
+    // Restore default border styles based on player side (white/black themes)
+    const isWhite = el.classList.contains('w');
+    el.style.border = isWhite ? '1px solid #ddd' : '1px solid #555';
+  }
+};
+
 const renderLeaderboardRows = (profiles, targetId) => {
   const el = $(targetId);
   if (!el) return;
@@ -1490,46 +1510,60 @@ const loadRankedLeaderboard = async () => {
 
 let profileLoadPromise = null;
 
-const loadRankedProfile = async () => {
+const loadRankedProfile = async (retries = 3) => {
   if (profileLoadPromise) return profileLoadPromise;
   profileLoadPromise = (async () => {
     if (!sb || !rankedUser) {
       rankedProfile = null;
+      myAvatarUrl = null;
       renderRankedAuth();
       return false;
     }
-    try {
-      const { data, error } = await sb
-        .from('profiles')
-        .select('*')
-        .eq('id', rankedUser.id)
-        .single();
-      if (error) {
-        if (error.code === 'PGRST116') {
-          rankedUser = null;
-          rankedProfile = null;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const { data, error } = await sb
+          .from('profiles')
+          .select('*')
+          .eq('id', rankedUser.id)
+          .single();
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // Profile row not found yet. If it's the last attempt, fail.
+            if (attempt < retries) {
+              console.warn(`Profile row not found, retrying in 500ms... (attempt ${attempt}/${retries})`);
+              await new Promise(r => setTimeout(r, 500));
+              continue;
+            }
+            rankedUser = null;
+            rankedProfile = null;
+            myAvatarUrl = null;
+            renderRankedAuth();
+            rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
+            sb.auth.signOut().catch(signOutErr => {
+              console.error('SignOut background error:', signOutErr);
+            });
+            return false;
+          }
+          throw error;
+        } else {
+          rankedProfile = data;
+          myAvatarUrl = data.avatar_url || null;
           renderRankedAuth();
-          rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
-          sb.auth.signOut().catch(signOutErr => {
-            console.error('SignOut background error:', signOutErr);
-          });
+          return true;
+        }
+      } catch (err) {
+        console.error(`loadRankedProfile error (attempt ${attempt}/${retries}):`, err);
+        if (attempt === retries) {
+          const msg = `Profile load error: ${err.message || err}`;
+          rankedMsg('ranked-profile-msg', msg, 'err');
+          rankedMsg('ranked-auth-msg', msg, 'err');
+          rankedProfile = null;
+          myAvatarUrl = null;
+          renderRankedAuth();
           return false;
         }
-        rankedMsg('ranked-profile-msg', `Profile error: ${error.message}`, 'err');
-        rankedProfile = null;
-        renderRankedAuth();
-        return false;
-      } else {
-        rankedProfile = data;
-        renderRankedAuth();
-        return true;
+        await new Promise(r => setTimeout(r, 500));
       }
-    } catch (err) {
-      console.error('loadRankedProfile error:', err);
-      rankedMsg('ranked-profile-msg', `Profile load error: ${err.message || err}`, 'err');
-      rankedProfile = null;
-      renderRankedAuth();
-      return false;
     }
   })();
 
@@ -1598,32 +1632,28 @@ const initSupabase = async () => {
   }
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   rankedReady = true;
-  sb.auth.onAuthStateChange(async (_event, session) => {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    console.log('Supabase Auth Event:', event);
     rankedUser = session?.user || null;
     if (!session) {
       rankedProfile = null;
       renderRankedAuth();
+      updateOnlineNameUI();
     } else {
-      await loadRankedProfile();
+      const ok = await loadRankedProfile();
+      if (ok) {
+        updateOnlineNameUI();
+      }
     }
     await loadRankedLeaderboard();
   });
-  const { data, error } = await sb.auth.getUser();
-  rankedUser = error ? null : data.user;
-  if (rankedUser) {
-    await loadRankedProfile();
-  } else {
-    rankedProfile = null;
-    renderRankedAuth();
-  }
-  await loadRankedLeaderboard();
 };
 
 const rankedSignIn = async () => {
   if (!sb) return;
   rankedMsg('ranked-auth-msg', 'Signing in...');
   try {
-    const { data, error } = await sb.auth.signInWithPassword({
+    const { error } = await sb.auth.signInWithPassword({
       email: $('ranked-email').value.trim(),
       password: $('ranked-password').value,
     });
@@ -1634,11 +1664,6 @@ const rankedSignIn = async () => {
       rankedMsg('ranked-auth-msg', error.message, 'err');
       return;
     }
-    rankedUser = data.user;
-    const profileLoaded = await loadRankedProfile();
-    if (!profileLoaded || !rankedUser) return;
-    await loadRankedLeaderboard();
-    rankedMsg('ranked-auth-msg', 'Signed in.', 'ok');
   } catch (err) {
     console.error('Sign in exception:', err);
     rankedMsg('ranked-auth-msg', `Sign in error: ${err.message || err}`, 'err');
@@ -1675,11 +1700,6 @@ const rankedSignUp = async () => {
       rankedMsg('ranked-auth-msg', 'Check your email to confirm the account. If the link opens a blank or failed localhost page, the account is usually still confirmed; return here and sign in.', 'ok');
       return;
     }
-    rankedUser = data.user;
-    const profileLoaded = await loadRankedProfile();
-    if (!profileLoaded || !rankedUser) return;
-    await updateRankedProfile({ username }, false);
-    rankedMsg('ranked-auth-msg', 'Account created.', 'ok');
   } catch (err) {
     console.error('Sign up exception:', err);
     let msg = err.message || err;
@@ -2056,9 +2076,9 @@ const renderBoard = () => {
     $('name-bot').textContent = botName;
     $('name-top').textContent = topName;
     $('av-bot').className = `pbar-av ${flipped ? 'b' : 'w'}`;
-    $('av-bot').textContent = botName[0]?.toUpperCase() || '?';
+    setPlayerAvatar('av-bot', null, botName[0]?.toUpperCase() || '?');
     $('av-top').className = `pbar-av ${flipped ? 'w' : 'b'}`;
-    $('av-top').textContent = topName[0]?.toUpperCase() || '?';
+    setPlayerAvatar('av-top', null, topName[0]?.toUpperCase() || '?');
   }
 
   // Player bar active states
@@ -2710,7 +2730,7 @@ const startReconnectWatch = () => {
         conn = peer.connect('chess-' + roomId, { reliable: true });
         setupConn();
       } else {
-        conn.send({ type: 'reconnect', name: myName });
+        conn.send({ type: 'reconnect', name: myName, avatarUrl: myAvatarUrl });
       }
     }, RECONNECT_RETRY_MS);
   }
@@ -2959,7 +2979,8 @@ const announceRoom = () => {
     timeControl: tc,
     hc: isRanked ? null : { wMul: activeHcWMul, bMul: activeHcBMul, piece: activeHcPiece },
     ranked: isRanked,
-    hostRating: rankedProfile?.rating || 1200
+    hostRating: rankedProfile?.rating || 1200,
+    hostAvatarUrl: rankedProfile?.avatar_url || null
   });
 };
 
@@ -2992,6 +3013,39 @@ const renderRoomsList = () => {
     const info = document.createElement('div');
     info.className = 'room-info';
 
+    const hostRow = document.createElement('div');
+    hostRow.style.display = 'flex';
+    hostRow.style.alignItems = 'center';
+    hostRow.style.gap = '8px';
+    hostRow.style.marginBottom = '2px';
+
+    if (room.hostAvatarUrl) {
+      const av = document.createElement('div');
+      av.style.width = '20px';
+      av.style.height = '20px';
+      av.style.borderRadius = '3px';
+      av.style.backgroundImage = `url(${room.hostAvatarUrl})`;
+      av.style.backgroundSize = 'cover';
+      av.style.backgroundPosition = 'center';
+      av.style.flexShrink = '0';
+      hostRow.appendChild(av);
+    } else {
+      const av = document.createElement('div');
+      av.style.width = '20px';
+      av.style.height = '20px';
+      av.style.borderRadius = '3px';
+      av.style.background = room.ranked ? 'var(--accent)' : 'var(--bg4)';
+      av.style.color = room.ranked ? '#fff' : 'var(--text2)';
+      av.style.display = 'flex';
+      av.style.alignItems = 'center';
+      av.style.justifyContent = 'center';
+      av.style.fontSize = '9px';
+      av.style.fontWeight = 'bold';
+      av.style.flexShrink = '0';
+      av.textContent = room.hostName[0]?.toUpperCase() || '?';
+      hostRow.appendChild(av);
+    }
+
     const hostSpan = document.createElement('span');
     hostSpan.className = 'room-host';
     if (room.ranked) {
@@ -2999,7 +3053,8 @@ const renderRoomsList = () => {
     } else {
       hostSpan.textContent = room.hostName;
     }
-    info.appendChild(hostSpan);
+    hostRow.appendChild(hostSpan);
+    info.appendChild(hostRow);
 
     const detailsSpan = document.createElement('span');
     detailsSpan.className = 'room-details';
@@ -3082,8 +3137,10 @@ $('btn-start-local').onclick = () => {
 
   $('name-bot').textContent = nameW;
   $('name-top').textContent = nameB;
-  $('av-bot').className = 'pbar-av w'; $('av-bot').textContent = nameW[0].toUpperCase();
-  $('av-top').className = 'pbar-av b'; $('av-top').textContent = nameB[0].toUpperCase();
+  $('av-bot').className = 'pbar-av w';
+  setPlayerAvatar('av-bot', null, nameW[0].toUpperCase());
+  $('av-top').className = 'pbar-av b';
+  setPlayerAvatar('av-top', null, nameB[0].toUpperCase());
   $('g-title').textContent = 'Pass & Play';
   show('tab-chat', false);
   goGame();
@@ -3333,7 +3390,8 @@ const setupConn = () => {
         type: wasReconnecting ? 'reconnect' : 'join',
         name: myName,
         userId: rankedUser?.id || null,
-        rating: rankedProfile?.rating || 1200
+        rating: rankedProfile?.rating || 1200,
+        avatarUrl: myAvatarUrl
       });
     }
     show('tab-chat', true);
@@ -3385,9 +3443,9 @@ const setupOnlineGame = (wName, bName, side) => {
   $('name-bot').textContent = botLabel;
   $('name-top').textContent = topLabel;
   $('av-bot').className = `pbar-av ${side === 'w' ? 'w' : 'b'}`;
-  $('av-bot').textContent = botName[0]?.toUpperCase() || '?';
+  setPlayerAvatar('av-bot', myAvatarUrl, botName[0]?.toUpperCase() || '?');
   $('av-top').className = `pbar-av ${side === 'w' ? 'b' : 'w'}`;
-  $('av-top').textContent = topName[0]?.toUpperCase() || '?';
+  setPlayerAvatar('av-top', opponentAvatarUrl, topName[0]?.toUpperCase() || '?');
   $('g-title').textContent = `Room: ${roomId}`;
 
   goGame();
@@ -3585,16 +3643,20 @@ const handleMsg = async (d) => {
 
     case 'reconnect': {
       opponentName = d.name || opponentName;
+      opponentAvatarUrl = d.avatarUrl || opponentAvatarUrl;
       setOpponentReconnectLabel(false);
-      if (conn && conn.open) conn.send({ type: 'reconnect_ack', name: myName });
+      if (conn && conn.open) conn.send({ type: 'reconnect_ack', name: myName, avatarUrl: myAvatarUrl });
       markConnected();
+      setPlayerAvatar('av-top', opponentAvatarUrl, opponentName[0]?.toUpperCase() || '?');
       addChat('System', `${opponentName} reconnected.`, 'sys');
       break;
     }
 
     case 'reconnect_ack': {
       opponentName = d.name || opponentName;
+      opponentAvatarUrl = d.avatarUrl || opponentAvatarUrl;
       markConnected();
+      setPlayerAvatar('av-top', opponentAvatarUrl, opponentName[0]?.toUpperCase() || '?');
       addChat('System', 'Reconnected. Game resumed.', 'sys');
       break;
     }
@@ -3608,6 +3670,7 @@ const handleMsg = async (d) => {
     case 'init': {
       myColor = d.guestColor;
       opponentName = d.hostName;
+      opponentAvatarUrl = d.hostAvatarUrl || null;
       isRankedGame = !!d.ranked;
       if (isRankedGame) {
         hostUserId = d.hostUserId;
@@ -3628,13 +3691,15 @@ const handleMsg = async (d) => {
         type: 'join_ack',
         name: myName,
         guestUserId: rankedUser?.id || null,
-        guestRating: rankedProfile?.rating || 1200
+        guestRating: rankedProfile?.rating || 1200,
+        guestAvatarUrl: myAvatarUrl
       });
       break;
     }
 
     case 'join': {
       opponentName = d.name;
+      opponentAvatarUrl = d.avatarUrl || null;
       isRankedGame = isRanked;
       if (isRankedGame) {
         hostUserId = rankedUser?.id || null;
@@ -3645,7 +3710,7 @@ const handleMsg = async (d) => {
         gameBlackId = myColor === 'w' ? guestUserId : hostUserId;
       }
       $('name-top').textContent = d.name;
-      $('av-top').textContent = d.name[0]?.toUpperCase() || '?';
+      setPlayerAvatar('av-top', opponentAvatarUrl, d.name[0]?.toUpperCase() || '?');
       const tc = getSelectedTC();
       activeTC = { base: tc.base, inc: tc.inc };
       activeHcWMul = hcWMul;
@@ -3659,7 +3724,8 @@ const handleMsg = async (d) => {
         hc: isRankedGame ? null : { wMul: hcWMul, bMul: hcBMul, piece: hcPiece },
         ranked: isRankedGame,
         hostUserId: hostUserId,
-        hostRating: hostRating
+        hostRating: hostRating,
+        hostAvatarUrl: myAvatarUrl
       });
       setupOnlineGame(myColor === 'w' ? myName : d.name, myColor === 'w' ? d.name : myName, myColor);
       addChat('System', `${d.name} joined.`, 'sys');
@@ -3668,6 +3734,7 @@ const handleMsg = async (d) => {
 
     case 'join_ack': {
       opponentName = d.name;
+      opponentAvatarUrl = d.guestAvatarUrl || null;
       if (isRankedGame) {
         guestUserId = d.guestUserId;
         guestRating = d.guestRating || 1200;
@@ -3675,7 +3742,7 @@ const handleMsg = async (d) => {
         gameBlackId = myColor === 'w' ? guestUserId : hostUserId;
       }
       $('name-top').textContent = d.name;
-      $('av-top').textContent = d.name[0]?.toUpperCase() || '?';
+      setPlayerAvatar('av-top', opponentAvatarUrl, d.name[0]?.toUpperCase() || '?');
       addChat('System', `${d.name} connected.`, 'sys');
       break;
     }
