@@ -86,8 +86,13 @@ main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:1
 .pbar-av.b{background:#333;color:#eee;border:1px solid #555}
 .pbar-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
 .pbar-caps{display:flex;align-items:center;gap:2px;margin-left:4px;flex-wrap:wrap}
-.pbar-caps span{width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pbar-caps svg{width:26px;height:26px;opacity:.82}
+.cap-stack{position:relative;width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:-4px}
+.cap-piece{position:absolute;width:26px;height:26px;display:flex;align-items:center;justify-content:center}
+.cap-piece:nth-child(1){left:0;z-index:4}
+.cap-piece:nth-child(2){left:5px;z-index:3;opacity:.9}
+.cap-piece:nth-child(3){left:10px;z-index:2;opacity:.78}
+.cap-piece:nth-child(n+4){display:none}
+.pbar-caps svg{width:26px;height:26px;opacity:.86}
 .pbar-adv{color:var(--green);font-weight:700;font-size:11px;margin-left:3px}
 .pbar-right{display:flex;align-items:center;gap:6px}
 
@@ -118,7 +123,7 @@ main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:1
 .pc{width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:grab;z-index:10;touch-action:none;position:relative}
 .pc:active{cursor:grabbing}
 .pc.drag{visibility:hidden}
-.pc svg{width:88%;height:88%;filter:var(--piece-shadow)}
+.pc svg{width:88%;height:88%;filter:var(--piece-shadow);pointer-events:none;-webkit-user-drag:none;user-select:none}
 body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .ghost{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%) scale(1.08);filter:var(--ghost-shadow);display:none}
 
@@ -416,6 +421,10 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
       <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm1 2h12v2H6v-2z"/></svg>
       Ranked
     </button>
+    <button id="nav-leaderboard" class="menu-item" data-menu-mode="leaderboard">
+      <svg viewBox="0 0 24 24"><path d="M7 21H3V9h4v12zm7 0h-4V3h4v18zm7 0h-4V12h4v9z"/></svg>
+      Leaderboard
+    </button>
   </nav>
   <div class="menu-spacer"></div>
   <button id="menu-account" class="menu-account" data-menu-mode="account">
@@ -568,6 +577,10 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
         <div class="ranked-msg">Ranked play requires you to be signed in. Please log in or create an account from the Account tab.</div>
       </div>
 
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="sect-leaderboard" class="lobby-sect">
       <div class="ranked-card">
         <div class="ranked-title">Leaderboard</div>
         <div id="ranked-leaderboard"></div>
@@ -1143,6 +1156,10 @@ let roomScore = { w: 0, b: 0, draws: 0 }, gameResultRecorded = false;
 let isReconnecting = false, reconnectTimeout = null, guestReconnectInterval = null, lastRecvTime = 0;
 let intentionalDisconnect = false, opponentDisconnected = false, rematchBlockedReason = '';
 let sb = null, rankedUser = null, rankedProfile = null, rankedReady = false;
+const clientInstanceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+let accountSessionStartedAt = 0;
+let accountPresenceChannel = null;
+let accountBroadcast = null;
 
 // Ranked matchmaking state
 let isRanked = false;
@@ -1325,6 +1342,7 @@ const SCREEN_COPY = {
   local: { title: 'Local', kicker: 'Pass-and-play on this screen' },
   online: { title: 'Online', kicker: 'Create or join a peer-to-peer game' },
   ranked: { title: 'Ranked', kicker: 'Profiles, ratings, and leaderboard' },
+  leaderboard: { title: 'Leaderboard', kicker: 'Ranked standings and stats' },
   account: { title: 'Account', kicker: 'Sign in and manage your chess profile' }
 };
 
@@ -1365,6 +1383,7 @@ const setAppMode = (nextMode, closeMenu=true) => {
   $('sect-local').classList.toggle('on', mode === 'local');
   $('sect-online').classList.toggle('on', mode === 'online');
   $('sect-ranked').classList.toggle('on', mode === 'ranked');
+  $('sect-leaderboard').classList.toggle('on', mode === 'leaderboard');
   $('sect-account').classList.toggle('on', mode === 'account');
   show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
   show('name-grp-single', mode === 'online');
@@ -1397,7 +1416,7 @@ const setAppMode = (nextMode, closeMenu=true) => {
     try { lobbyWs.close(); } catch(e){}
     lobbyWs = null;
   }
-  if (mode === 'ranked' || mode === 'account') loadRankedLeaderboard();
+  if (mode === 'ranked' || mode === 'leaderboard' || mode === 'account') loadRankedLeaderboard();
   if (closeMenu) setMenuOpen(false);
 };
 
@@ -1488,27 +1507,141 @@ const renderLeaderboardRows = (profiles, targetId) => {
   }).join('');
 };
 
+const stopAccountPresence = async () => {
+  if (accountPresenceChannel && sb) {
+    try { await sb.removeChannel(accountPresenceChannel); } catch(e) {}
+  }
+  accountPresenceChannel = null;
+};
+
+const handleDuplicateAccountInstance = async (source='another tab') => {
+  if (!rankedUser) return;
+  await signOutAndClearRanked(`Signed out because this account was opened in ${source}.`, 'err');
+  await stopAccountPresence();
+};
+
+const startAccountPresence = async () => {
+  if (!sb || !rankedUser) return;
+  accountSessionStartedAt = Date.now();
+  const payload = {
+    type: 'account-active',
+    userId: rankedUser.id,
+    instanceId: clientInstanceId,
+    startedAt: accountSessionStartedAt
+  };
+
+  try {
+    if (!accountBroadcast && 'BroadcastChannel' in window) {
+      accountBroadcast = new BroadcastChannel('open-chess-account-presence');
+      accountBroadcast.onmessage = (event) => {
+        const msg = event.data || {};
+        if (
+          msg.type === 'account-active'
+          && msg.userId === rankedUser?.id
+          && msg.instanceId !== clientInstanceId
+          && (msg.startedAt || 0) >= accountSessionStartedAt
+        ) {
+          handleDuplicateAccountInstance('another tab');
+        }
+      };
+    }
+    accountBroadcast?.postMessage(payload);
+  } catch(e) {}
+
+  try {
+    localStorage.setItem('open-chess-account-presence', JSON.stringify(payload));
+  } catch(e) {}
+
+  await stopAccountPresence();
+  try {
+    accountPresenceChannel = sb.channel(`account-presence-${rankedUser.id}`, {
+      config: { presence: { key: clientInstanceId } }
+    });
+    accountPresenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = accountPresenceChannel.presenceState();
+        const others = Object.values(state)
+          .flat()
+          .filter(p => p.userId === rankedUser?.id && p.instanceId !== clientInstanceId);
+        const newer = others.some(p => (p.startedAt || 0) >= accountSessionStartedAt);
+        if (newer) handleDuplicateAccountInstance('another instance');
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await accountPresenceChannel.track({
+            userId: rankedUser.id,
+            instanceId: clientInstanceId,
+            startedAt: accountSessionStartedAt
+          });
+        }
+      });
+  } catch(e) {
+    console.warn('Account presence unavailable:', e);
+  }
+};
+
 const loadRankedLeaderboard = async () => {
   if (!sb) return;
-  const { data, error } = await sb
-    .from('profiles')
-    .select('username, avatar_url, rating, wins, losses, draws')
-    .order('rating', { ascending: false })
-    .order('wins', { ascending: false })
-    .limit(20);
-  if (error) {
-    const errorHtml = `<div class="ranked-msg err" style="margin:10px 0">Leaderboard error: ${error.message}</div>`;
+  try {
+    const { data, error } = await sb
+      .from('profiles')
+      .select('username, avatar_url, rating, wins, losses, draws')
+      .order('rating', { ascending: false })
+      .order('wins', { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    renderLeaderboardRows(data, 'ranked-leaderboard');
+    renderLeaderboardRows(data?.slice(0, 8), 'side-ranked-leaderboard');
+  } catch (err) {
+    const errorHtml = `<div class="ranked-msg err" style="margin:10px 0">Leaderboard error: ${esc(err.message || err)}</div>`;
     const rl = $('ranked-leaderboard');
     if (rl) rl.innerHTML = errorHtml;
     const srl = $('side-ranked-leaderboard');
     if (srl) srl.innerHTML = errorHtml;
-    return;
   }
-  renderLeaderboardRows(data, 'ranked-leaderboard');
-  renderLeaderboardRows(data?.slice(0, 8), 'side-ranked-leaderboard');
 };
 
 let profileLoadPromise = null;
+const ACCOUNT_MISSING_MSG = 'This account no longer exists. Create a new account or sign in with an active one.';
+
+const setAuthBusy = (busy) => {
+  const signIn = $('ranked-sign-in');
+  const signUp = $('ranked-sign-up');
+  if (signIn) {
+    signIn.disabled = busy;
+    signIn.textContent = busy ? 'Signing In...' : 'Sign In';
+  }
+  if (signUp) signUp.disabled = busy;
+};
+
+const clearRankedSession = (message='', kind='') => {
+  rankedUser = null;
+  rankedProfile = null;
+  myAvatarUrl = null;
+  avatarCrop.file = null;
+  renderRankedAuth();
+  updateOnlineNameUI();
+  if (message) rankedMsg('ranked-auth-msg', message, kind);
+};
+
+const signOutAndClearRanked = async (message='', kind='') => {
+  if (typeof stopAccountPresence === 'function') {
+    await stopAccountPresence();
+  }
+  if (sb) {
+    try { await sb.auth.signOut(); } catch(e) {}
+  }
+  clearRankedSession(message, kind);
+};
+
+const authErrorMessage = (error) => {
+  const raw = error?.message || String(error || 'Sign in failed.');
+  const lower = raw.toLowerCase();
+  if (lower.includes('invalid login') || lower.includes('invalid credentials') || lower.includes('user not found')) {
+    return 'Account no longer exists, or the email/password is incorrect.';
+  }
+  return raw;
+};
 
 const loadRankedProfile = async (retries = 3) => {
   if (profileLoadPromise) return profileLoadPromise;
@@ -1525,32 +1658,24 @@ const loadRankedProfile = async (retries = 3) => {
           .from('profiles')
           .select('*')
           .eq('id', rankedUser.id)
-          .single();
+          .maybeSingle();
         if (error) {
-          if (error.code === 'PGRST116') {
-            // Profile row not found yet. If it's the last attempt, fail.
-            if (attempt < retries) {
-              console.warn(`Profile row not found, retrying in 500ms... (attempt ${attempt}/${retries})`);
-              await new Promise(r => setTimeout(r, 500));
-              continue;
-            }
-            rankedUser = null;
-            rankedProfile = null;
-            myAvatarUrl = null;
-            renderRankedAuth();
-            rankedMsg('ranked-auth-msg', 'This account no longer exists. Sign in again with an active account.', 'err');
-            sb.auth.signOut().catch(signOutErr => {
-              console.error('SignOut background error:', signOutErr);
-            });
-            return false;
-          }
           throw error;
-        } else {
+        }
+        if (data) {
           rankedProfile = data;
           myAvatarUrl = data.avatar_url || null;
           renderRankedAuth();
           return true;
         }
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 500));
+          continue;
+        }
+        rankedProfile = null;
+        myAvatarUrl = null;
+        renderRankedAuth();
+        return false;
       } catch (err) {
         console.error(`loadRankedProfile error (attempt ${attempt}/${retries}):`, err);
         if (attempt === retries) {
@@ -1574,6 +1699,31 @@ const loadRankedProfile = async (retries = 3) => {
   }
 };
 
+const validateRankedSession = async ({ retries = 3, silent = false, welcome = false } = {}) => {
+  if (!sb) return false;
+  try {
+    const { data, error } = await sb.auth.getUser();
+    if (error || !data?.user) {
+      await signOutAndClearRanked(!silent && rankedUser ? 'Session expired. Please sign in again.' : '', 'err');
+      return false;
+    }
+    rankedUser = data.user;
+    const ok = await loadRankedProfile(retries);
+    if (!ok) {
+      await signOutAndClearRanked(ACCOUNT_MISSING_MSG, 'err');
+      return false;
+    }
+    await startAccountPresence();
+    if (welcome) rankedMsg('ranked-auth-msg', `Welcome, ${rankedProfile?.username || rankedUser?.email}!`, 'ok');
+    await loadRankedLeaderboard();
+    return true;
+  } catch (err) {
+    console.error('Session validation failed:', err);
+    await signOutAndClearRanked(!silent ? `Sign in error: ${err.message || err}` : '', 'err');
+    return false;
+  }
+};
+
 const updateOnlineNameUI = () => {
   const signedIn = !!rankedUser;
   if (signedIn) {
@@ -1588,6 +1738,21 @@ const updateOnlineNameUI = () => {
     myName = $('my-name').value.trim() || 'Player';
   }
 };
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== 'open-chess-account-presence' || !event.newValue || !rankedUser) return;
+  try {
+    const msg = JSON.parse(event.newValue);
+    if (
+      msg.type === 'account-active'
+      && msg.userId === rankedUser.id
+      && msg.instanceId !== clientInstanceId
+      && (msg.startedAt || 0) >= accountSessionStartedAt
+    ) {
+      handleDuplicateAccountInstance('another tab');
+    }
+  } catch(e) {}
+});
 
 const renderRankedAuth = () => {
   const signedIn = !!rankedUser;
@@ -1630,43 +1795,67 @@ const initSupabase = async () => {
     rankedMsg('ranked-auth-msg', 'Supabase client did not load. Check the CDN connection.', 'err');
     return;
   }
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: window.sessionStorage,
+      storageKey: 'open-chess-auth'
+    }
+  });
   rankedReady = true;
-  sb.auth.onAuthStateChange(async (event, session) => {
-    console.log('Supabase Auth Event:', event);
+  sb.auth.onAuthStateChange((event, session) => {
     rankedUser = session?.user || null;
     if (!session) {
-      rankedProfile = null;
-      renderRankedAuth();
-      updateOnlineNameUI();
-    } else {
-      const ok = await loadRankedProfile();
-      if (ok) {
-        updateOnlineNameUI();
-      }
+      clearRankedSession();
+      loadRankedLeaderboard();
+      return;
     }
-    await loadRankedLeaderboard();
+    setTimeout(() => {
+      validateRankedSession({
+        retries: event === 'SIGNED_IN' ? 8 : 3,
+        silent: event === 'INITIAL_SESSION',
+        welcome: event === 'SIGNED_IN'
+      });
+    }, 0);
   });
+  await validateRankedSession({ silent: true });
 };
 
 const rankedSignIn = async () => {
   if (!sb) return;
+  const email = $('ranked-email').value.trim();
+  const password = $('ranked-password').value;
+  if (!email || !password) {
+    rankedMsg('ranked-auth-msg', 'Enter your email and password.', 'err');
+    return;
+  }
   rankedMsg('ranked-auth-msg', 'Signing in...');
+  setAuthBusy(true);
   try {
-    const { error } = await sb.auth.signInWithPassword({
-      email: $('ranked-email').value.trim(),
-      password: $('ranked-password').value,
-    });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) {
-      rankedUser = null;
-      rankedProfile = null;
-      renderRankedAuth();
-      rankedMsg('ranked-auth-msg', error.message, 'err');
+      clearRankedSession(authErrorMessage(error), 'err');
       return;
     }
+    if (!data?.session || !data?.user) {
+      clearRankedSession('Sign in did not return a session. Please try again.', 'err');
+      return;
+    }
+    rankedUser = data.user;
+    const ok = await loadRankedProfile(8);
+    if (!ok) {
+      await signOutAndClearRanked(ACCOUNT_MISSING_MSG, 'err');
+      return;
+    }
+    rankedMsg('ranked-auth-msg', `Welcome, ${rankedProfile?.username || rankedUser?.email}!`, 'ok');
+    await loadRankedLeaderboard();
   } catch (err) {
     console.error('Sign in exception:', err);
     rankedMsg('ranked-auth-msg', `Sign in error: ${err.message || err}`, 'err');
+  } finally {
+    setAuthBusy(false);
   }
 };
 
@@ -1679,35 +1868,50 @@ const rankedSignUp = async () => {
   }
   const emailRedirectTo = getAuthRedirectUrl();
   rankedMsg('ranked-auth-msg', 'Creating account...');
+
+  let data, error;
   try {
-    const { data, error } = await sb.auth.signUp({
+    ({ data, error } = await sb.auth.signUp({
       email: $('ranked-email').value.trim(),
       password: $('ranked-password').value,
       options: {
         ...(emailRedirectTo ? { emailRedirectTo } : {}),
         data: { username },
       },
-    });
-    if (error) {
-      let msg = error.message;
-      if (error.code === '23505' || (msg && (msg.toLowerCase().includes('unique') || msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('duplicate key') || msg.toLowerCase().includes('profiles_username_key')))) {
-        msg = 'Username is already taken. Please choose another one.';
-      }
-      rankedMsg('ranked-auth-msg', msg, 'err');
-      return;
-    }
-    if (!data.session) {
-      rankedMsg('ranked-auth-msg', 'Check your email to confirm the account. If the link opens a blank or failed localhost page, the account is usually still confirmed; return here and sign in.', 'ok');
-      return;
-    }
+    }));
   } catch (err) {
-    console.error('Sign up exception:', err);
-    let msg = err.message || err;
-    if (msg && (msg.toLowerCase().includes('unique') || msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('duplicate key') || msg.toLowerCase().includes('profiles_username_key'))) {
+    console.error('[signUp] exception:', err);
+    rankedMsg('ranked-auth-msg', `Sign up error: ${err.message || err}`, 'err');
+    return;
+  }
+
+  if (error) {
+    let msg = error.message;
+    if (error.code === '23505' || (msg && (msg.toLowerCase().includes('unique') || msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('duplicate key') || msg.toLowerCase().includes('profiles_username_key')))) {
       msg = 'Username is already taken. Please choose another one.';
     }
-    rankedMsg('ranked-auth-msg', `Sign up error: ${msg}`, 'err');
+    rankedMsg('ranked-auth-msg', msg, 'err');
+    return;
   }
+
+  // Supabase "ghost signup": duplicate email with confirmation enabled returns
+  // no error but also no user (identities array is empty).
+  if (!data?.user || data.user.identities?.length === 0) {
+    rankedMsg('ranked-auth-msg', 'An account with that email already exists. Please sign in instead.', 'err');
+    return;
+  }
+
+  if (!data.session) {
+    // Email confirmation required — session comes after the user clicks the link.
+    rankedMsg('ranked-auth-msg', 'Account created! Check your email and click the confirmation link, then sign in here.', 'ok');
+    return;
+  }
+
+  // Session returned immediately (email confirmation is disabled).
+  // onAuthStateChange will fire, load the profile, and render the logged-in UI.
+  // Just show a transitional message — do NOT call loadRankedProfile here, that
+  // races with the onAuthStateChange handler and can cause the message to get stuck.
+  rankedMsg('ranked-auth-msg', 'Account created! Signing in...');
 };
 
 const updateRankedProfile = async (changes, showMessage=true) => {
@@ -1817,38 +2021,41 @@ const avatarCropToBlob = () => new Promise(resolve => {
 
 const rankedSaveProfile = async () => {
   if (!sb || !rankedUser) return;
-  const username = cleanUsername($('ranked-username-input').value);
-  if (!username) {
-    rankedMsg('ranked-profile-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
-    return;
-  }
-  let avatar_url = rankedProfile?.avatar_url || null;
-  const file = avatarCrop.file;
-  if (file) {
-    const path = `${rankedUser.id}/avatar.jpg`;
-    rankedMsg('ranked-profile-msg', 'Uploading avatar...');
-    const upload = await sb.storage.from('avatars').upload(path, file, { upsert: true });
-    if (upload.error) {
-      rankedMsg('ranked-profile-msg', upload.error.message, 'err');
+  try {
+    const username = cleanUsername($('ranked-username-input').value);
+    if (!username) {
+      rankedMsg('ranked-profile-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
       return;
     }
-    avatar_url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+    let avatar_url = rankedProfile?.avatar_url || null;
+    const file = avatarCrop.file;
+    if (file) {
+      const path = `${rankedUser.id}/avatar.jpg`;
+      rankedMsg('ranked-profile-msg', 'Uploading avatar...');
+      const upload = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+      if (upload.error) {
+        rankedMsg('ranked-profile-msg', upload.error.message, 'err');
+        return;
+      }
+      avatar_url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+    }
+    await updateRankedProfile({
+      username,
+      avatar_url,
+    });
+    $('ranked-avatar-file').value = '';
+    avatarCrop.file = null;
+  } catch (err) {
+    console.error('Save profile exception:', err);
+    rankedMsg('ranked-profile-msg', `Save error: ${err.message || err}`, 'err');
   }
-  await updateRankedProfile({
-    username,
-    avatar_url,
-  });
-  $('ranked-avatar-file').value = '';
-  avatarCrop.file = null;
 };
 
 const rankedSignOut = async () => {
   if (!sb) return;
+  await stopAccountPresence();
   await sb.auth.signOut();
-  rankedUser = null;
-  rankedProfile = null;
-  renderRankedAuth();
-  rankedMsg('ranked-auth-msg', 'Signed out.');
+  clearRankedSession('Signed out.');
 };
 
 const rankedDeleteAccount = async () => {
@@ -1866,11 +2073,9 @@ const rankedDeleteAccount = async () => {
       return;
     }
     // Sign out to clear credentials
+    await stopAccountPresence();
     await sb.auth.signOut();
-    rankedUser = null;
-    rankedProfile = null;
-    renderRankedAuth();
-    updateOnlineNameUI();
+    clearRankedSession();
     await loadRankedLeaderboard();
     rankedMsg('ranked-auth-msg', 'Account permanently deleted.', 'ok');
     dlg('Account Deleted', 'Your account has been permanently deleted.');
@@ -1977,10 +2182,23 @@ const updateCaptures = () => {
 
   const renderCaps = (el, caps) => {
     el.innerHTML = '';
+    const groups = [];
     caps.forEach(p => {
-      const d = document.createElement('span');
-      d.innerHTML = PIECE_SVGS[pieceStyle]?.[`${p.c}${p.t.toUpperCase()}`] || '';
-      el.appendChild(d);
+      const last = groups[groups.length - 1];
+      if (last && last.t === p.t && last.c === p.c) last.items.push(p);
+      else groups.push({ t: p.t, c: p.c, items: [p] });
+    });
+    groups.forEach(group => {
+      const stack = document.createElement('span');
+      stack.className = 'cap-stack';
+      stack.title = `${group.items.length} captured ${group.t.toUpperCase()}`;
+      group.items.forEach(() => {
+        const d = document.createElement('span');
+        d.className = 'cap-piece';
+        d.innerHTML = PIECE_SVGS[pieceStyle]?.[`${group.c}${group.t.toUpperCase()}`] || '';
+        stack.appendChild(d);
+      });
+      el.appendChild(stack);
     });
   };
 
@@ -2034,6 +2252,7 @@ const renderBoard = () => {
       if (pc) {
         const pEl = document.createElement('div');
         pEl.className = 'pc';
+        pEl.draggable = false;
         pEl.dataset.pc = `${pc.color}${pc.type.toUpperCase()}`;
         const svgKey = `${pc.color}${pc.type.toUpperCase()}`;
         pEl.innerHTML = PIECE_SVGS[pieceStyle]?.[svgKey] || `<span style="font-size:24px">${svgKey}</span>`;
@@ -2160,15 +2379,24 @@ const updateMoves = () => {
 
 const submitRankedGameResult = async (result) => {
   if (!sb || !rankedUser || !isRankedGame || rankedResultSubmitted) return;
+  if (!resolveRankedPlayerIds()) {
+    addChat('System', 'Ranked result was not submitted because the ranked player identities were not confirmed before the game started.', 'sys');
+    return;
+  }
   rankedResultSubmitted = true;
+  const normalizedResult = result === 'w' ? 'white' : result === 'b' ? 'black' : 'draw';
+  const tc = activeTC || getSelectedTC();
   
   try {
     const { data, error } = await sb.functions.invoke('submit-ranked-result', {
       body: {
-        roomId: roomId,
-        whiteId: gameWhiteId,
-        blackId: gameBlackId,
-        result: result
+        white_id: gameWhiteId,
+        black_id: gameBlackId,
+        result: normalizedResult,
+        result_reason: gameOverReason || 'normal',
+        pgn: chess.pgn(),
+        final_fen: chess.fen(),
+        time_control: tc ? `${tc.base}+${tc.inc}` : null
       }
     });
     
@@ -2178,11 +2406,9 @@ const submitRankedGameResult = async (result) => {
       return;
     }
 
-    if (data && data.success) {
-      addChat('System', 'Ranked result recorded successfully. ELO updated.', 'sys');
-      // Reload profile to show updated ELO and stats
-      await loadRankedProfile();
-    }
+    addChat('System', 'Ranked result recorded successfully. ELO updated.', 'sys');
+    await loadRankedProfile();
+    await loadRankedLeaderboard();
   } catch (err) {
     console.error('Error in submitRankedGameResult:', err);
     addChat('System', `Error submitting ranked result: ${err.message || err}`, 'sys');
@@ -2282,6 +2508,7 @@ const onPtrUp = (e) => {
   window.removeEventListener('pointermove', onPtrMove);
   window.removeEventListener('pointerup', onPtrUp);
   $('ghost').style.display = 'none';
+  $('ghost').innerHTML = '';
   if (dragPcEl) dragPcEl.classList.remove('drag');
 
   const bEl = $('board');
@@ -2435,7 +2662,12 @@ const goLobby = () => {
 
   // Reset ranked matchmaking settings
   isRanked = false;
+  isRankedGame = false;
   rankedResultSubmitted = false;
+  hostUserId = null;
+  guestUserId = null;
+  gameWhiteId = null;
+  gameBlackId = null;
 
   $('m-rooms-lobby').classList.remove('on');
   if (roomId) removeRoom(roomId);
@@ -2667,6 +2899,32 @@ const closeTransport = () => {
   conn = null;
   peer = null;
   setTimeout(() => { intentionalDisconnect = false; }, 0);
+};
+
+const rejectCurrentJoin = (reason, message) => {
+  try {
+    if (conn && conn.open) conn.send({ type: 'join_rejected', reason, message });
+  } catch(e) {}
+  try { if (conn) conn.close(); } catch(e) {}
+  conn = null;
+  setStatus('wait', 'Waiting...');
+  announceRoom();
+};
+
+const sameSignedInAccount = (otherUserId) =>
+  !!otherUserId && !!rankedUser?.id && otherUserId === rankedUser.id;
+
+const resolveRankedPlayerIds = () => {
+  if (!isRankedGame) return true;
+  if (!hostUserId && isHost) hostUserId = rankedUser?.id || null;
+  if (!guestUserId && !isHost) guestUserId = rankedUser?.id || null;
+  if (!gameWhiteId && hostUserId && guestUserId) {
+    gameWhiteId = myColor === 'w' ? (isHost ? hostUserId : guestUserId) : (isHost ? guestUserId : hostUserId);
+  }
+  if (!gameBlackId && hostUserId && guestUserId) {
+    gameBlackId = myColor === 'b' ? (isHost ? hostUserId : guestUserId) : (isHost ? guestUserId : hostUserId);
+  }
+  return !!gameWhiteId && !!gameBlackId && gameWhiteId !== gameBlackId;
 };
 
 const sendHandshakeKey = async () => {
@@ -2980,7 +3238,7 @@ const announceRoom = () => {
     hc: isRanked ? null : { wMul: activeHcWMul, bMul: activeHcBMul, piece: activeHcPiece },
     ranked: isRanked,
     hostRating: rankedProfile?.rating || 1200,
-    hostAvatarUrl: rankedProfile?.avatar_url || null
+    hostAvatarUrl: myAvatarUrl || null
   });
 };
 
@@ -3149,10 +3407,17 @@ $('btn-start-local').onclick = () => {
 // ─── ONLINE: CREATE ───
 $('btn-create').onclick = () => {
   isRanked = false;
+  isRankedGame = false;
+  hostUserId = rankedUser?.id || null;
+  guestUserId = null;
+  gameWhiteId = null;
+  gameBlackId = null;
   if (rankedUser) {
     myName = rankedProfile?.username || rankedUser.email || 'Host';
+    myAvatarUrl = rankedProfile?.avatar_url || null;
   } else {
     myName = $('my-name').value.trim() || 'Host';
+    myAvatarUrl = null;
   }
   roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
   isHost = true;
@@ -3222,7 +3487,13 @@ $('btn-create-ranked').onclick = () => {
     return;
   }
   isRanked = true;
+  isRankedGame = false;
   myName = rankedProfile?.username || rankedUser.email || 'Player';
+  myAvatarUrl = rankedProfile?.avatar_url || null;
+  hostUserId = rankedUser.id;
+  guestUserId = null;
+  gameWhiteId = null;
+  gameBlackId = null;
   roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
   isHost = true;
   roomScore = { w: 0, b: 0, draws: 0 };
@@ -3306,7 +3577,8 @@ const joinRoom = (code) => {
     lobbyWs = null;
   }
 
-  myName = $('my-name').value.trim() || 'Guest';
+  myName = rankedUser ? (rankedProfile?.username || rankedUser.email || 'Player') : ($('my-name').value.trim() || 'Guest');
+  myAvatarUrl = rankedProfile?.avatar_url || null;
   roomId = String(code || '').trim().toUpperCase(); isHost = false;
   setStatus('wait', 'Connecting...');
 
@@ -3668,6 +3940,18 @@ const handleMsg = async (d) => {
     }
 
     case 'init': {
+      if (d.ranked && !rankedUser) {
+        dlg('Authentication Required', 'You must be signed in to join this ranked game.');
+        closeTransport();
+        goLobby();
+        break;
+      }
+      if (sameSignedInAccount(d.hostUserId)) {
+        dlg('Same Account', 'You cannot join your own game with the same signed-in account.');
+        closeTransport();
+        goLobby();
+        break;
+      }
       myColor = d.guestColor;
       opponentName = d.hostName;
       opponentAvatarUrl = d.hostAvatarUrl || null;
@@ -3675,6 +3959,12 @@ const handleMsg = async (d) => {
       if (isRankedGame) {
         hostUserId = d.hostUserId;
         guestUserId = rankedUser?.id || null;
+        if (!hostUserId || !guestUserId || hostUserId === guestUserId) {
+          dlg('Ranked Error', 'Ranked game could not start because both player accounts were not confirmed.');
+          closeTransport();
+          goLobby();
+          break;
+        }
         hostRating = d.hostRating || 1200;
         guestRating = rankedProfile?.rating || 1200;
         gameWhiteId = myColor === 'w' ? guestUserId : hostUserId;
@@ -3698,12 +3988,22 @@ const handleMsg = async (d) => {
     }
 
     case 'join': {
+      if (sameSignedInAccount(d.userId)) {
+        rejectCurrentJoin('same_account', 'You cannot play against the same signed-in account.');
+        dlg('Same Account', 'Blocked a join attempt from the same signed-in account.');
+        break;
+      }
       opponentName = d.name;
       opponentAvatarUrl = d.avatarUrl || null;
       isRankedGame = isRanked;
       if (isRankedGame) {
         hostUserId = rankedUser?.id || null;
         guestUserId = d.userId;
+        if (!hostUserId || !guestUserId || hostUserId === guestUserId) {
+          rejectCurrentJoin('ranked_identity_missing', 'Ranked games require two different signed-in accounts.');
+          dlg('Ranked Error', 'Ranked game could not start because both player accounts were not confirmed.');
+          break;
+        }
         hostRating = rankedProfile?.rating || 1200;
         guestRating = d.rating || 1200;
         gameWhiteId = myColor === 'w' ? hostUserId : guestUserId;
@@ -3736,7 +4036,13 @@ const handleMsg = async (d) => {
       opponentName = d.name;
       opponentAvatarUrl = d.guestAvatarUrl || null;
       if (isRankedGame) {
-        guestUserId = d.guestUserId;
+        guestUserId = d.guestUserId || guestUserId;
+        if (!hostUserId || !guestUserId || hostUserId === guestUserId) {
+          dlg('Ranked Error', 'Ranked game could not start because both player accounts were not confirmed.');
+          closeTransport();
+          goLobby();
+          break;
+        }
         guestRating = d.guestRating || 1200;
         gameWhiteId = myColor === 'w' ? hostUserId : guestUserId;
         gameBlackId = myColor === 'w' ? guestUserId : hostUserId;
@@ -3744,6 +4050,14 @@ const handleMsg = async (d) => {
       $('name-top').textContent = d.name;
       setPlayerAvatar('av-top', opponentAvatarUrl, d.name[0]?.toUpperCase() || '?');
       addChat('System', `${d.name} connected.`, 'sys');
+      break;
+    }
+
+    case 'join_rejected': {
+      const msg = d.message || 'The host rejected the join request.';
+      dlg('Join Blocked', msg);
+      closeTransport();
+      goLobby();
       break;
     }
 
@@ -3884,6 +4198,25 @@ const handleMsg = async (d) => {
 // ─── ONLINE LOBBY POPUP & REAL-TIME SETTINGS & REMATCH FLOW ───
 
 $('btn-show-rooms').onclick = () => {
+  lobbyFilterMode = 'online';
+  $('btn-close-rooms').textContent = 'Close';
+  $('m-rooms-lobby').classList.add('on');
+  initLobby();
+  if (lobbyPollInterval) clearInterval(lobbyPollInterval);
+  lobbyPollInterval = setInterval(() => {
+    if (lobbyWs && lobbyWs.readyState === WebSocket.OPEN) {
+      sendLobbyMsg({ type: 'query_rooms' });
+    }
+  }, 1000);
+};
+
+$('btn-show-rooms-ranked').onclick = () => {
+  if (!rankedUser) {
+    dlg('Authentication Required', 'You must be signed in to view ranked challenges.');
+    return;
+  }
+  lobbyFilterMode = 'ranked';
+  $('btn-close-rooms').textContent = 'Close';
   $('m-rooms-lobby').classList.add('on');
   initLobby();
   if (lobbyPollInterval) clearInterval(lobbyPollInterval);
