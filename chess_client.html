@@ -248,6 +248,8 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .btn:active{transform:scale(.98)}
 .btn.sec{background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
 .btn.sec:hover{background:var(--bg4);color:var(--text)}
+.btn.danger{background:#cf3c3c;color:#fff}
+.btn.danger:hover{background:#b53030}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
 .divider{display:flex;align-items:center;margin:14px 0;color:var(--text3);font-size:11px;gap:8px}
@@ -617,6 +619,9 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
         <div class="ranked-actions">
           <button id="ranked-save-profile" class="btn">Save Profile</button>
           <button id="ranked-sign-out" class="btn sec">Sign Out</button>
+        </div>
+        <div style="margin-top:8px">
+          <button id="ranked-delete-account" class="btn danger" style="font-size:12px;padding:8px">Delete Account</button>
         </div>
         <div id="ranked-profile-msg" class="ranked-msg">Manage your profile and ranked identity.</div>
       </div>
@@ -1826,6 +1831,35 @@ const rankedSignOut = async () => {
   rankedMsg('ranked-auth-msg', 'Signed out.');
 };
 
+const rankedDeleteAccount = async () => {
+  if (!sb || !rankedUser) return;
+  const ok1 = await dlg('Delete Account', 'Are you sure you want to permanently delete your account? This will erase all ELO progress, statistics, and profile details.', 'Delete Permanently', 'Cancel');
+  if (!ok1) return;
+  const ok2 = await dlg('Confirm Deletion', 'This action is absolutely irreversible. Are you 100% sure you want to delete your account?', 'Yes, Delete It', 'No, Keep Account');
+  if (!ok2) return;
+
+  rankedMsg('ranked-profile-msg', 'Deleting account...');
+  try {
+    const { error } = await sb.from('profiles').delete().eq('id', rankedUser.id);
+    if (error) {
+      rankedMsg('ranked-profile-msg', `Delete error: ${error.message}`, 'err');
+      return;
+    }
+    // Sign out to clear credentials
+    await sb.auth.signOut();
+    rankedUser = null;
+    rankedProfile = null;
+    renderRankedAuth();
+    updateOnlineNameUI();
+    await loadRankedLeaderboard();
+    rankedMsg('ranked-auth-msg', 'Account permanently deleted.', 'ok');
+    dlg('Account Deleted', 'Your account has been permanently deleted.');
+  } catch (err) {
+    console.error('Delete account exception:', err);
+    rankedMsg('ranked-profile-msg', `Delete error: ${err.message || err}`, 'err');
+  }
+};
+
 // ─── TIMER ENGINE ───
 const startClock = () => {
   if (!timerEnabled || gameOver || isReconnecting) return;
@@ -2753,6 +2787,7 @@ $('ranked-sign-in').onclick = rankedSignIn;
 $('ranked-sign-up').onclick = rankedSignUp;
 $('ranked-save-profile').onclick = rankedSaveProfile;
 $('ranked-sign-out').onclick = rankedSignOut;
+$('ranked-delete-account').onclick = rankedDeleteAccount;
 $('ranked-refresh').onclick = loadRankedLeaderboard;
 $('ranked-avatar-file').onchange = async (e) => {
   const file = e.target.files?.[0];
