@@ -3244,23 +3244,6 @@ const renderArrowsAndHighlights = () => {
   if (!container) return;
   container.innerHTML = '';
   
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-  marker.setAttribute('id', 'arrowhead-notation');
-  marker.setAttribute('markerWidth', '6');
-  marker.setAttribute('markerHeight', '6');
-  marker.setAttribute('refX', '5.4');
-  marker.setAttribute('refY', '3');
-  marker.setAttribute('orient', 'auto');
-  
-  const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-  polygon.setAttribute('points', '0 1, 5 3, 0 5');
-  polygon.setAttribute('fill', arrowColor);
-  
-  marker.appendChild(polygon);
-  defs.appendChild(marker);
-  container.appendChild(defs);
-  
   boardHighlights.forEach(sq => {
     const coords = getSquareCenter(sq);
     if (!coords) return;
@@ -3288,22 +3271,39 @@ const renderArrowsAndHighlights = () => {
     const dist = Math.hypot(dx, dy);
     if (dist === 0) return;
     
-    const offset = 34;
-    const xEnd = end.x - (dx / dist) * offset;
-    const yEnd = end.y - (dy / dist) * offset;
+    const ux = dx / dist;
+    const uy = dy / dist;
+    const tipOffset = 22;
+    const headLength = 28;
+    const headWidth = 24;
+    const tipX = end.x - ux * tipOffset;
+    const tipY = end.y - uy * tipOffset;
+    const baseX = tipX - ux * headLength;
+    const baseY = tipY - uy * headLength;
+    const perpX = -uy;
+    const perpY = ux;
     
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', start.x);
     line.setAttribute('y1', start.y);
-    line.setAttribute('x2', xEnd);
-    line.setAttribute('y2', yEnd);
+    line.setAttribute('x2', baseX);
+    line.setAttribute('y2', baseY);
     line.setAttribute('stroke', arrowColor);
     line.setAttribute('stroke-width', '8');
     line.setAttribute('opacity', '0.78');
-    line.setAttribute('marker-end', 'url(#arrowhead-notation)');
     line.setAttribute('stroke-linecap', 'butt');
     
     container.appendChild(line);
+
+    const head = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    head.setAttribute('points', [
+      `${tipX},${tipY}`,
+      `${baseX + perpX * (headWidth / 2)},${baseY + perpY * (headWidth / 2)}`,
+      `${baseX - perpX * (headWidth / 2)},${baseY - perpY * (headWidth / 2)}`
+    ].join(' '));
+    head.setAttribute('fill', arrowColor);
+    head.setAttribute('opacity', '0.78');
+    container.appendChild(head);
   });
 };
 
