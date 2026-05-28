@@ -77,7 +77,7 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 /* ── MAIN LAYOUT ── */
 main{flex:1;min-height:calc(100vh - 48px);display:flex;justify-content:center;align-items:center;padding:16px;gap:16px}
 body.game-active main{align-items:flex-start}
-body.ranked-lobby main{gap:2px}
+body.ranked-lobby main{gap:8px}
 body.ranked-lobby main #lobby, body.ranked-lobby main #ranked-leaderboard-panel{margin:0}
 .col-board{display:flex;flex-direction:column;gap:6px;width:var(--board-sz);flex-shrink:0}
 .col-side{width:320px;display:flex;flex-direction:column;gap:8px;max-height:calc(var(--board-sz) + 80px)}
@@ -239,6 +239,14 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .crop-controls{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .crop-controls label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.35px;text-align:left}
 .crop-controls input[type=range]{width:100%}
+.bug-report-form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.bug-report-form label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.35px}
+.bug-report-form textarea{width:100%;min-height:110px;resize:vertical;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:9px 10px;color:var(--text);font-size:13px;line-height:1.35}
+.bug-report-form textarea:focus{outline:none;border-color:var(--accent)}
+.bug-report-note{font-size:11px;color:var(--text3);line-height:1.35}
+.bug-report-status{font-size:11px;color:var(--text3);min-height:16px}
+.bug-report-status.ok{color:var(--green)}
+.bug-report-status.err{color:var(--red)}
 
 /* ── LOBBY ── */
 .lobby{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:100%;max-width:480px;margin:0 auto}
@@ -290,6 +298,10 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .share-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;margin-top:10px}
 .room-code{font-size:22px;font-weight:800;letter-spacing:3px;color:var(--text);background:var(--bg);padding:6px 16px;border-radius:3px;margin:8px 0;border:1px dashed var(--accent);display:inline-block;font-variant-numeric:tabular-nums}
 .share-box p{font-size:11px;color:var(--text3);margin-top:6px}
+
+.server-banner{display:none;margin:-4px 0 12px;padding:9px 11px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.1);color:#ffb0b0;border-radius:4px;font-size:12px;font-weight:700;text-align:center;line-height:1.35}
+.server-banner button{margin-top:8px;width:auto;display:inline-flex;padding:7px 12px;font-size:12px}
+body.server-offline .server-banner,body.update-required .server-banner{display:block}
 
 body.server-offline [data-online-only],body.update-required [data-online-only]{opacity:.5;pointer-events:none}
 
@@ -458,6 +470,10 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
       <svg viewBox="0 0 24 24"><path d="M7 21V9H4V7h3V3h10v4h3v2h-3v12h-2v-5H9v5H7zm2-7h6V5H9v9z"/></svg>
       Ranked
     </button>
+    <button id="nav-bug-report" class="menu-item" type="button">
+      <svg viewBox="0 0 24 24"><path d="M20 8h-2.81a5.98 5.98 0 0 0-1.54-1.78L17 4.86 15.59 3.45l-1.82 1.82A6.31 6.31 0 0 0 12 5c-.62 0-1.22.09-1.77.27L8.41 3.45 7 4.86l1.35 1.36A5.98 5.98 0 0 0 6.81 8H4v2h2.09A6.7 6.7 0 0 0 6 11v1H4v2h2v1c0 .35.03.69.09 1H4v2h2.81A6.1 6.1 0 0 0 12 21a6.1 6.1 0 0 0 5.19-3H20v-2h-2.09c.06-.31.09-.65.09-1v-1h2v-2h-2v-1c0-.35-.03-.69-.09-1H20V8zm-4 7a4 4 0 0 1-8 0v-4a4 4 0 0 1 8 0v4zm-6-4h4v2h-4v-2zm0 3h4v2h-4v-2z"/></svg>
+      Report Bug
+    </button>
   </nav>
   <div class="menu-spacer"></div>
   <button id="menu-account" class="menu-account" data-menu-mode="account">
@@ -475,6 +491,10 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
   <div id="lobby" class="lobby">
     <h2 id="screen-title">Local</h2>
     <div id="screen-kicker" class="screen-kicker">Pass-and-play on this screen</div>
+    <div id="server-banner" class="server-banner">
+      <span id="server-banner-text">Checking online services...</span>
+      <button id="update-download" class="btn sec" type="button" style="display:none">Download latest</button>
+    </div>
 
     <!-- Name inputs, dynamically shown based on mode -->
     <div id="setup-options">
@@ -731,7 +751,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
         <div class="tabs">
           <div class="tab on" data-t="t-moves">Moves</div>
           <div class="tab" data-t="t-chat" id="tab-chat" style="display:none">Chat</div>
-          <div class="tab" data-t="t-ranked">Ranked</div>
+          <div class="tab" data-t="t-ranked" id="tab-ranked">Ranked</div>
           <div class="tab" data-t="t-settings">Settings</div>
         </div>
         <div id="t-moves" class="tab-bd on">
@@ -812,15 +832,17 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
               <label>Previous Move Highlight</label>
               <input type="color" id="last-move-color" value="#fff200" style="width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px">
             </div>
-            <div class="setting">
-              <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--text2);font-size:13px;cursor:pointer">
-                <input type="checkbox" id="chk-premoting" checked>
-                Enable Pre-moving
-              </label>
-            </div>
-            <div class="setting">
-              <label>Premove Highlight Color</label>
-              <input type="color" id="premove-color" value="#f04f35" style="width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px">
+            <div id="setting-premove-container" style="display:contents">
+              <div class="setting">
+                <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--text2);font-size:13px;cursor:pointer">
+                  <input type="checkbox" id="chk-premoting" checked>
+                  Enable Pre-moving
+                </label>
+              </div>
+              <div class="setting">
+                <label>Premove Highlight Color</label>
+                <input type="color" id="premove-color" value="#f04f35" style="width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px">
+              </div>
             </div>
             <div class="setting">
               <label>Notation Draw Color (Right Click)</label>
@@ -859,6 +881,30 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
     <div id="dlg-btns" class="modal-btns">
       <button id="dlg-ok" class="btn">OK</button>
       <button id="dlg-cancel" class="btn sec" style="display:none">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bug Report Modal -->
+<div id="m-bug-report" class="modal-bg">
+  <div class="modal" style="max-width:520px">
+    <h3>Report a Bug</h3>
+    <div class="bug-report-form">
+      <div>
+        <label for="bug-report-details">What happened?</label>
+        <textarea id="bug-report-details" placeholder="Describe what broke, what you expected, and what you were doing."></textarea>
+      </div>
+      <div>
+        <label for="bug-report-steps">Steps or extra notes</label>
+        <textarea id="bug-report-steps" placeholder="Optional: list steps to reproduce, room type, account state, or opponent behaviour."></textarea>
+      </div>
+      <div class="bug-report-note">This sends the report to Supabase with app diagnostics, current game state, and browser details. Download a local copy if the server is unavailable.</div>
+      <div id="bug-report-status" class="bug-report-status"></div>
+    </div>
+    <div class="modal-btns">
+      <button id="bug-report-submit" class="btn">Submit Report</button>
+      <button id="bug-report-download" class="btn sec">Download Copy</button>
+      <button id="bug-report-close" class="btn sec">Cancel</button>
     </div>
   </div>
 </div>
@@ -1189,7 +1235,7 @@ class MockConnection {
 const Peer = MockPeer;
 
 // ─── SUPABASE CONFIG ───
-const APP_VERSION = '0.5.1';
+const APP_VERSION = '1.0.0';
 const APP_DOWNLOAD_URL = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
 const SUPABASE_URL = 'https://pwnblygocbbizpbscqig.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3bmJseWdvY2JiaXpwYnNjcWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE0MzIsImV4cCI6MjA5NTM3NzQzMn0.HbtM3SjKLaVpUDKHB44NxOBQbRH5cLfwwngEABPVAco';
@@ -1357,6 +1403,152 @@ const dlg = (title, body, ok='OK', cancel=null) => new Promise(r => {
   } else show('dlg-cancel', false);
   $('m-dialog').classList.add('on');
 });
+
+const closeBugReport = () => {
+  $('m-bug-report').classList.remove('on');
+};
+
+const safeBugValue = (getter, fallback='') => {
+  try {
+    const value = getter();
+    return value === undefined ? fallback : value;
+  } catch (err) {
+    return fallback;
+  }
+};
+
+const buildBugReport = () => {
+  const details = $('bug-report-details')?.value.trim() || '';
+  const steps = $('bug-report-steps')?.value.trim() || '';
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    appVersion: safeBugValue(() => APP_VERSION),
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    online: navigator.onLine,
+    serverOnline: safeBugValue(() => serverOnline),
+    updateRequired: safeBugValue(() => updateRequired),
+    mode: safeBugValue(() => mode),
+    gameActive: safeBugValue(() => gameIsActive()),
+    gameOver: safeBugValue(() => gameOver),
+    gameOverReason: safeBugValue(() => gameOverReason),
+    roomId: safeBugValue(() => roomId),
+    isHost: safeBugValue(() => isHost),
+    isRankedGame: safeBugValue(() => isRankedGame),
+    matchmakingMode: safeBugValue(() => matchmakingMode),
+    myColor: safeBugValue(() => myColor),
+    opponentDisconnected: safeBugValue(() => opponentDisconnected),
+    reconnecting: safeBugValue(() => isReconnecting),
+    signedIn: safeBugValue(() => !!rankedUser),
+    username: safeBugValue(() => rankedProfile?.username || rankedUser?.email || ''),
+    fen: safeBugValue(() => chess.fen()),
+    pgn: safeBugValue(() => chess.pgn())
+  };
+
+  return [
+    'Open Chess Bug Report',
+    '',
+    `What happened:\n${details || '(not provided)'}`,
+    '',
+    `Steps / notes:\n${steps || '(not provided)'}`,
+    '',
+    'Diagnostics:',
+    JSON.stringify(diagnostics, null, 2)
+  ].join('\n');
+};
+
+const bugReportPayload = () => {
+  const details = $('bug-report-details')?.value.trim() || '';
+  const steps = $('bug-report-steps')?.value.trim() || '';
+  const description = [
+    details || '(not provided)',
+    steps ? `\nSteps / notes:\n${steps}` : ''
+  ].join('\n').trim();
+
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    online: navigator.onLine,
+    serverOnline: safeBugValue(() => serverOnline),
+    updateRequired: safeBugValue(() => updateRequired),
+    mode: safeBugValue(() => mode),
+    gameActive: safeBugValue(() => gameIsActive()),
+    gameOver: safeBugValue(() => gameOver),
+    gameOverReason: safeBugValue(() => gameOverReason),
+    roomId: safeBugValue(() => roomId),
+    isHost: safeBugValue(() => isHost),
+    isRankedGame: safeBugValue(() => isRankedGame),
+    matchmakingMode: safeBugValue(() => matchmakingMode),
+    myColor: safeBugValue(() => myColor),
+    opponentDisconnected: safeBugValue(() => opponentDisconnected),
+    reconnecting: safeBugValue(() => isReconnecting),
+    signedIn: safeBugValue(() => !!rankedUser),
+    fen: safeBugValue(() => chess.fen()),
+    pgn: safeBugValue(() => chess.pgn())
+  };
+
+  return {
+    user_id: safeBugValue(() => rankedUser?.id || null, null),
+    reporter_username: safeBugValue(() => rankedProfile?.username || rankedUser?.email || null, null),
+    description,
+    client_version: safeBugValue(() => APP_VERSION),
+    browser_info: JSON.stringify(diagnostics)
+  };
+};
+
+const setBugReportStatus = (message, kind='') => {
+  const el = $('bug-report-status');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `bug-report-status${kind ? ` ${kind}` : ''}`;
+};
+
+const submitBugReport = async () => {
+  const payload = bugReportPayload();
+  if (!payload.description || payload.description === '(not provided)') {
+    setBugReportStatus('Describe the bug before submitting.', 'err');
+    return;
+  }
+  if (!sb || !serverOnline) {
+    setBugReportStatus('Server unavailable. Download a copy and submit it later.', 'err');
+    return;
+  }
+  $('bug-report-submit').disabled = true;
+  setBugReportStatus('Submitting...', '');
+  try {
+    const { error } = await sb.from('bug_reports').insert(payload);
+    if (error) throw error;
+    setBugReportStatus('Bug report submitted. Thank you.', 'ok');
+    setTimeout(closeBugReport, 700);
+  } catch (err) {
+    console.warn('Bug report submit failed:', err);
+    setBugReportStatus(err?.message || 'Bug report failed. Download a copy and submit it later.', 'err');
+  } finally {
+    $('bug-report-submit').disabled = false;
+  }
+};
+
+const downloadBugReport = () => {
+  const report = buildBugReport();
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `open_chess_bug_report_${stamp}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  closeBugReport();
+};
+
+const openBugReport = () => {
+  setMenuOpen(false);
+  $('bug-report-details').value = '';
+  $('bug-report-steps').value = '';
+  setBugReportStatus('');
+  $('m-bug-report').classList.add('on');
+  setTimeout(() => $('bug-report-details')?.focus(), 0);
+};
 
 const closePromo = (value=null) => {
   if (activePromoResolve) {
@@ -3171,10 +3363,13 @@ const handlePremoveExecution = async () => {
 };
 
 window.addEventListener('resize', renderArrowsAndHighlights);
+const boardWrapEl = document.querySelector('.board-wrap');
+if (boardWrapEl) boardWrapEl.addEventListener('contextmenu', e => e.preventDefault());
 
 const setupPointers = () => {
   document.querySelectorAll('.sq').forEach(sq => {
     sq.onpointerdown = onSqDown;
+    sq.oncontextmenu = (e) => e.preventDefault();
   });
 };
 
@@ -3511,6 +3706,7 @@ const goLobby = () => {
   }
 
   chess.reset(); selSq = null; legalDests = []; gameOver = false; gameOverReason = '';
+  clearArrowsAndHighlights();
   gameEndFlashShownFor = '';
   stopClock();
   closeTransport();
@@ -3563,6 +3759,7 @@ const goGame = () => {
   chess.reset();
   queuedPremove = null;
   clearArrowsAndHighlights();
+  show('tab-ranked', mode !== 'local');
 
   // If activeTC is not initialized, set it from the current lobby selection
   if (!activeTC) {
@@ -3934,9 +4131,10 @@ const startReconnectWatch = () => {
 $('menu-open').onclick = () => setMenuOpen(true);
 $('menu-close').onclick = () => setMenuOpen(false);
 $('menu-backdrop').onclick = () => setMenuOpen(false);
-document.querySelectorAll('.menu-item').forEach(item => {
+document.querySelectorAll('.menu-item[data-menu-mode]').forEach(item => {
   item.onclick = () => setAppMode(item.dataset.menuMode);
 });
+$('nav-bug-report').onclick = openBugReport;
 $('menu-account').onclick = () => setAppMode('account');
 
 // Time control buttons
@@ -4028,6 +4226,12 @@ $('m-promo').onclick = (e) => {
     closePromo(null);
   }
 };
+$('bug-report-submit').onclick = submitBugReport;
+$('bug-report-download').onclick = downloadBugReport;
+$('bug-report-close').onclick = closeBugReport;
+$('m-bug-report').onclick = (e) => {
+  if (e.target === $('m-bug-report')) closeBugReport();
+};
 
 $('ranked-sign-in').onclick = rankedSignIn;
 $('ranked-sign-up').onclick = rankedSignUp;
@@ -4035,7 +4239,7 @@ $('ranked-save-profile').onclick = rankedSaveProfile;
 $('ranked-sign-out').onclick = rankedSignOut;
 $('ranked-delete-account').onclick = rankedDeleteAccount;
 $('ranked-refresh').onclick = loadRankedLeaderboard;
-$('update-download').onclick = downloadLatestHtml;
+if ($('update-download')) $('update-download').onclick = downloadLatestHtml;
 $('ranked-avatar-file').onchange = async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
