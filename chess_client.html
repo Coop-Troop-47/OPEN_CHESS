@@ -75,7 +75,8 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 .menu-account-sub{font-size:11px;color:var(--text3);margin-top:1px}
 
 /* ── MAIN LAYOUT ── */
-main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:16px;gap:16px}
+main{flex:1;min-height:calc(100vh - 48px);display:flex;justify-content:center;align-items:center;padding:16px;gap:16px}
+body.game-active main{align-items:flex-start}
 .col-board{display:flex;flex-direction:column;gap:6px;width:var(--board-sz);flex-shrink:0}
 .col-side{width:320px;display:flex;flex-direction:column;gap:8px;max-height:calc(var(--board-sz) + 80px)}
 
@@ -94,7 +95,9 @@ main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:1
 .cap-piece:nth-child(2){left:5px;z-index:3;opacity:.9}
 .cap-piece:nth-child(3){left:10px;z-index:2;opacity:.78}
 .cap-piece:nth-child(n+4){display:none}
-.pbar-caps svg{width:26px;height:26px;opacity:.86}
+.pbar-caps svg{width:26px;height:26px;opacity:1}
+.cap-piece.black svg{filter:var(--piece-shadow) drop-shadow(0 0 1px rgba(255,255,255,.95)) drop-shadow(0 0 2px rgba(255,255,255,.72))}
+.cap-piece:nth-child(n+2) svg{opacity:.86}
 .pbar-adv{color:var(--green);font-weight:700;font-size:11px;margin-left:3px}
 .pbar-right{display:flex;align-items:center;gap:6px}
 
@@ -107,6 +110,14 @@ main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:1
 /* ── BOARD ── */
 .board-wrap{position:relative;background:var(--bg3);padding:2px;border-radius:4px;border:1px solid var(--border)}
 .board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:100%;aspect-ratio:1;border-radius:2px;overflow:hidden;position:relative}
+.game-end-flash{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,.08)}
+.game-end-flash.on{display:flex;animation:endFade 1.8s ease forwards}
+.game-end-card{min-width:180px;max-width:80%;padding:16px 18px;background:rgba(27,27,31,.94);border:1px solid var(--border2);border-radius:5px;text-align:center;box-shadow:0 18px 44px rgba(0,0,0,.36);transform:translateY(8px) scale(.96);animation:endPop .32s ease forwards}
+.game-end-icon{width:38px;height:38px;margin:0 auto 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:20px;font-weight:900}
+.game-end-title{font-size:15px;font-weight:900;letter-spacing:.2px}
+.game-end-sub{font-size:12px;color:var(--text2);margin-top:4px}
+@keyframes endPop{to{transform:translateY(0) scale(1)}}
+@keyframes endFade{0%,78%{opacity:1}100%{opacity:0;display:none}}
 .sq{position:relative;display:flex;align-items:center;justify-content:center;cursor:default}
 .sq.l{background:var(--sq-l);color:var(--sq-l-t)}
 .sq.d{background:var(--sq-d);color:var(--sq-d-t)}
@@ -210,6 +221,10 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .ranked-stat{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:7px;text-align:center}
 .ranked-stat strong{display:block;font-size:14px;color:var(--text)}
 .ranked-stat span{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+.lobby[data-mode=ranked]{max-width:480px}
+.lobby[data-mode=account]{max-width:560px}
+.ranked-leaderboard-panel{max-width:420px}
+.playing-banner{font-weight:700;font-size:14px;color:var(--text);padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:3px}
 .avatar-crop-wrap{position:relative;width:min(320px,72vw);aspect-ratio:1;margin:0 auto 14px;background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;touch-action:none}
 .avatar-crop-img{position:absolute;top:50%;left:50%;max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center}
 .avatar-crop-mask{position:absolute;inset:0;box-shadow:0 0 0 999px rgba(0,0,0,.42);border:2px solid rgba(255,255,255,.82);border-radius:50%;pointer-events:none}
@@ -267,9 +282,10 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .share-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;margin-top:10px}
 .room-code{font-size:22px;font-weight:800;letter-spacing:3px;color:var(--text);background:var(--bg);padding:6px 16px;border-radius:3px;margin:8px 0;border:1px dashed var(--accent);display:inline-block;font-variant-numeric:tabular-nums}
 .share-box p{font-size:11px;color:var(--text3);margin-top:6px}
-.server-banner{display:none;margin:-4px 0 12px;padding:9px 11px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.1);color:#ffb0b0;border-radius:4px;font-size:12px;font-weight:700;text-align:center}
-body.server-offline .server-banner{display:block}
-body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
+.server-banner{display:none;margin:-4px 0 12px;padding:9px 11px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.1);color:#ffb0b0;border-radius:4px;font-size:12px;font-weight:700;text-align:center;line-height:1.35}
+.server-banner button{margin-top:8px;width:auto;display:inline-flex;padding:7px 12px;font-size:12px}
+body.server-offline .server-banner,body.update-required .server-banner{display:block}
+body.server-offline [data-online-only],body.update-required [data-online-only]{opacity:.5;pointer-events:none}
 
 /* Active rooms list styling */
 .rooms-list {
@@ -406,7 +422,11 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
     </div>
     <div class="hdr-btn" style="cursor:default">
       <div id="st-dot" class="dot"></div>
-      <span id="st-txt">Offline</span>
+      <span id="st-txt">Checking</span>
+    </div>
+    <div class="hdr-btn" style="cursor:default">
+      <div id="auth-dot" class="dot"></div>
+      <span id="auth-txt">Signed out</span>
     </div>
   </div>
 </header>
@@ -432,10 +452,6 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
       <svg viewBox="0 0 24 24"><path d="M7 21V9H4V7h3V3h10v4h3v2h-3v12h-2v-5H9v5H7zm2-7h6V5H9v9z"/></svg>
       Ranked
     </button>
-    <button id="nav-leaderboard" class="menu-item" data-menu-mode="leaderboard">
-      <svg viewBox="0 0 24 24"><path d="M5 21V9h4v12H5zm5 0V3h4v18h-4zm5 0v-7h4v7h-4z"/></svg>
-      Leaderboard
-    </button>
   </nav>
   <div class="menu-spacer"></div>
   <button id="menu-account" class="menu-account" data-menu-mode="account">
@@ -453,14 +469,17 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
   <div id="lobby" class="lobby">
     <h2 id="screen-title">Local</h2>
     <div id="screen-kicker" class="screen-kicker">Pass-and-play on this screen</div>
-    <div id="server-banner" class="server-banner">Server connection lost. Online games, ranked, leaderboard, and account editing are paused until Supabase reconnects.</div>
+    <div id="server-banner" class="server-banner">
+      <span id="server-banner-text">Checking online services...</span>
+      <button id="update-download" class="btn sec" type="button" style="display:none">Download latest</button>
+    </div>
 
     <!-- Name inputs, dynamically shown based on mode -->
     <div id="setup-options">
     <div id="name-grp-single" class="inp-grp" style="display:none">
       <label>Your Name</label>
       <input type="text" id="my-name" value="Player" maxlength="20">
-      <div id="my-name-display" style="display:none;font-weight:700;font-size:14px;color:var(--text);padding:4px 0;"></div>
+      <div id="my-name-display" class="playing-banner" style="display:none"></div>
     </div>
     <div id="name-grp-double" class="inp-grp">
       <div style="display:flex;gap:10px">
@@ -575,11 +594,6 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
     <div id="sect-ranked" class="lobby-sect">
       <div id="ranked-matchmaking-card" class="ranked-card" style="display:none">
         <div class="ranked-title">Play Ranked</div>
-        <div class="color-row" id="ranked-color-row">
-          <div class="c-btn on" data-c="w">⬜ White</div>
-          <div class="c-btn" data-c="random">🎲 Random</div>
-          <div class="c-btn" data-c="b">⬛ Black</div>
-        </div>
         <button id="btn-create-ranked" class="btn" style="margin-top:12px" data-online-only>Create Ranked Game</button>
         <button id="btn-show-rooms-ranked" class="btn sec" style="margin-top:12px" data-online-only>Show Ranked Challenges</button>
       </div>
@@ -587,16 +601,6 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
       <div id="ranked-matchmaking-locked-card" class="ranked-card">
         <div class="ranked-title">Ranked Play</div>
         <div class="ranked-msg">Ranked play requires you to be signed in. Please log in or create an account from the Account tab.</div>
-      </div>
-
-    </div>
-
-    <!-- Leaderboard -->
-    <div id="sect-leaderboard" class="lobby-sect">
-      <div class="ranked-card">
-        <div class="ranked-title">Leaderboard</div>
-        <div id="ranked-leaderboard"></div>
-        <button id="ranked-refresh" class="btn sec" style="margin-top:8px" data-online-only>Refresh Leaderboard</button>
       </div>
     </div>
 
@@ -607,7 +611,7 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
         <div class="ranked-form">
           <input type="email" id="ranked-email" placeholder="Email" autocomplete="email">
           <input type="password" id="ranked-password" placeholder="Password" autocomplete="current-password">
-          <input type="text" id="ranked-username" placeholder="Username" maxlength="24" autocomplete="nickname">
+          <input type="text" id="ranked-username" placeholder="Choose username" maxlength="24" autocomplete="nickname" style="display:none">
         </div>
         <div class="ranked-actions">
         <button id="ranked-sign-in" class="btn" data-online-only>Sign In</button>
@@ -664,6 +668,15 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
     </div>
   </div>
 
+  <div id="ranked-leaderboard-panel" class="lobby ranked-leaderboard-panel" style="display:none">
+    <h2>Leaderboard</h2>
+    <div class="screen-kicker">Ranked standings and stats</div>
+    <div class="ranked-card">
+      <div id="ranked-leaderboard"></div>
+      <button id="ranked-refresh" class="btn sec" style="margin-top:8px" data-online-only>Refresh Leaderboard</button>
+    </div>
+  </div>
+
   <!-- ── GAME VIEW ── -->
   <div id="game-wrap" class="game-wrap">
     <div class="col-board">
@@ -680,6 +693,13 @@ body.server-offline [data-online-only]{opacity:.5;pointer-events:none}
       </div>
       <div class="board-wrap">
         <div id="board" class="board"></div>
+        <div id="game-end-flash" class="game-end-flash">
+          <div class="game-end-card">
+            <div id="game-end-icon" class="game-end-icon">#</div>
+            <div id="game-end-title" class="game-end-title">Game Over</div>
+            <div id="game-end-sub" class="game-end-sub"></div>
+          </div>
+        </div>
       </div>
       <div id="pbar-bot" class="pbar">
         <div class="pbar-left">
@@ -1142,6 +1162,8 @@ class MockConnection {
 const Peer = MockPeer;
 
 // ─── SUPABASE CONFIG ───
+const APP_VERSION = '0.5.0';
+const APP_DOWNLOAD_URL = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
 const SUPABASE_URL = 'https://pwnblygocbbizpbscqig.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3bmJseWdvY2JiaXpwYnNjcWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE0MzIsImV4cCI6MjA5NTM3NzQzMn0.HbtM3SjKLaVpUDKHB44NxOBQbRH5cLfwwngEABPVAco';
 
@@ -1154,6 +1176,7 @@ let autoFlipLocal = true;
 let lastMoveColor = '#fff200', shadowsOn = false;
 let peer = null, conn = null, isHost = false, roomId = null;
 let gameOver = false, gameOverReason = '';
+let headerStatusOverride = null;
 let opponentName = 'Opponent';
 let myAvatarUrl = null;
 let opponentAvatarUrl = null;
@@ -1164,6 +1187,8 @@ let isReconnecting = false, reconnectTimeout = null, guestReconnectInterval = nu
 let intentionalDisconnect = false, opponentDisconnected = false, rematchBlockedReason = '';
 let sb = null, rankedUser = null, rankedProfile = null, rankedReady = false;
 let serverOnline = true, serverStatusInterval = null, serverWasOffline = false;
+let serverChecked = false, updateRequired = false, appVersionInfo = null;
+let serverOfflineGameNoticeShown = false;
 const clientInstanceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let accountSessionStartedAt = 0;
 let accountSignInEpoch = 0;
@@ -1173,6 +1198,7 @@ const ACCOUNT_PRESENCE_KEY = 'open-chess-account-presence';
 const ACCOUNT_PRESENCE_PING_MS = 2500;
 let accountPresencePingAt = 0;
 let accountPresenceInterval = null;
+let accountPresenceFailureCount = 0;
 
 // Ranked matchmaking state
 let isRanked = false;
@@ -1186,6 +1212,8 @@ let guestRating = 1200;
 let rankedResultSubmitted = false;
 let rankedLiveGameId = null;
 let lobbyFilterMode = 'online';
+let matchmakingMode = null;
+let gameEndFlashShownFor = '';
 let avatarCrop = {
   file: null,
   url: null,
@@ -1356,7 +1384,6 @@ const SCREEN_COPY = {
   local: { title: 'Local', kicker: 'Pass-and-play on this screen' },
   online: { title: 'Online', kicker: 'Create or join a peer-to-peer game' },
   ranked: { title: 'Ranked', kicker: 'Profiles, ratings, and leaderboard' },
-  leaderboard: { title: 'Leaderboard', kicker: 'Ranked standings and stats' },
   account: { title: 'Account', kicker: 'Sign in and manage your chess profile' }
 };
 
@@ -1364,6 +1391,7 @@ const gameIsActive = () => $('game-wrap')?.classList.contains('on');
 
 const syncHeaderMode = () => {
   const inGame = gameIsActive();
+  document.body.classList.toggle('game-active', inGame);
   show('menu-open', !inGame);
   show('header-leave', inGame);
   if (inGame) setMenuOpen(false);
@@ -1395,9 +1423,13 @@ const updateMenuAccount = () => {
 
 const setAppMode = (nextMode, closeMenu=true) => {
   if (gameIsActive()) return;
+  if (hasOpenMatchmakingRoom() && nextMode !== matchmakingMode) {
+    cancelOpenMatchmakingRoom(`Switched from ${matchmakingMode} matchmaking.`);
+  }
   mode = nextMode;
   const signedIn = !!rankedUser;
   const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
+  $('lobby').dataset.mode = mode;
   $('screen-title').textContent = copy.title;
   $('screen-kicker').textContent = copy.kicker;
   $('app-title').textContent = `${copy.title} Chess`;
@@ -1408,10 +1440,10 @@ const setAppMode = (nextMode, closeMenu=true) => {
   $('sect-local').classList.toggle('on', mode === 'local');
   $('sect-online').classList.toggle('on', mode === 'online');
   $('sect-ranked').classList.toggle('on', mode === 'ranked');
-  $('sect-leaderboard').classList.toggle('on', mode === 'leaderboard');
   $('sect-account').classList.toggle('on', mode === 'account');
+  show('ranked-leaderboard-panel', mode === 'ranked');
   show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
-  show('name-grp-single', mode === 'online');
+  show('name-grp-single', mode === 'online' || mode === 'ranked');
   show('name-grp-double', mode === 'local');
   show('setting-auto-flip', mode === 'local');
 
@@ -1441,7 +1473,8 @@ const setAppMode = (nextMode, closeMenu=true) => {
     try { lobbyWs.close(); } catch(e){}
     lobbyWs = null;
   }
-  if (mode === 'ranked' || mode === 'leaderboard' || mode === 'account') loadRankedLeaderboard();
+  syncMatchmakingUi();
+  if (mode === 'ranked' || mode === 'account') loadRankedLeaderboard();
   if (closeMenu) setMenuOpen(false);
 };
 
@@ -1453,26 +1486,148 @@ const rankedMsg = (id, text, kind='') => {
   el.className = `ranked-msg${kind ? ` ${kind}` : ''}`;
 };
 
-const setServerOnline = async (online, message='') => {
-  serverOnline = online;
+const onlineFeaturesPaused = () => !serverOnline || updateRequired;
+
+const versionParts = (value) => String(value || '0')
+  .split(/[^\d]+/)
+  .filter(Boolean)
+  .map(n => parseInt(n, 10) || 0);
+
+const compareVersions = (a, b) => {
+  const av = versionParts(a), bv = versionParts(b);
+  const len = Math.max(av.length, bv.length, 3);
+  for (let i = 0; i < len; i++) {
+    const diff = (av[i] || 0) - (bv[i] || 0);
+    if (diff) return diff;
+  }
+  return 0;
+};
+
+const versionUpdateMessage = () => {
+  const latest = appVersionInfo?.latest_version || appVersionInfo?.minimum_supported_version || 'latest';
+  return `Update required. This app is v${APP_VERSION}; latest required version is v${latest}. Online, ranked, accounts, and leaderboard are disabled until you update.`;
+};
+
+const applyOnlineFeatureGate = () => {
   document.body.classList.toggle('server-offline', !serverOnline);
+  document.body.classList.toggle('update-required', serverOnline && updateRequired);
+  const message = !serverOnline
+    ? 'Server connection lost. Online games, ranked, leaderboard, and account editing are paused until Supabase reconnects.'
+    : updateRequired
+      ? versionUpdateMessage()
+      : '';
+  const bannerText = $('server-banner-text');
+  if (bannerText) bannerText.textContent = message;
+  show('update-download', serverOnline && updateRequired);
   document.querySelectorAll('[data-online-only]').forEach(el => {
-    el.disabled = !serverOnline;
-    el.title = serverOnline ? '' : 'Server unavailable. Online features are paused.';
+    el.disabled = onlineFeaturesPaused();
+    el.title = !serverOnline
+      ? 'Server unavailable. Online features are paused.'
+      : updateRequired
+        ? 'Update required. Online features are paused.'
+        : '';
   });
+};
+
+const updateHeaderStatus = () => {
+  const dot = $('st-dot');
+  const txt = $('st-txt');
+  if (!dot || !txt) return;
+  if (!serverChecked) {
+    dot.className = 'dot wait';
+    txt.textContent = 'Checking';
+  } else if (!serverOnline) {
+    dot.className = 'dot err';
+    txt.textContent = 'Server offline';
+  } else if (updateRequired) {
+    dot.className = 'dot err';
+    txt.textContent = 'Update required';
+  } else if (headerStatusOverride) {
+    dot.className = `dot ${headerStatusOverride.cls || ''}`;
+    txt.textContent = headerStatusOverride.txt;
+  } else {
+    dot.className = 'dot on';
+    txt.textContent = 'Online';
+  }
+
+  const authDot = $('auth-dot');
+  const authTxt = $('auth-txt');
+  if (authDot && authTxt) {
+    authDot.className = `dot ${rankedUser ? 'on' : ''}`;
+    authTxt.textContent = rankedUser ? 'Signed in' : 'Signed out';
+  }
+};
+
+const setServerOnline = async (online, message='') => {
+  const wasOnline = serverOnline;
+  serverOnline = online;
+  serverChecked = true;
+  applyOnlineFeatureGate();
   if (!serverOnline) {
     serverWasOffline = true;
     rankedMsg('ranked-auth-msg', message || 'Server unavailable. Account features are paused.', 'err');
     rankedMsg('ranked-profile-msg', message || 'Server unavailable. Profile editing is paused.', 'err');
-    if (mode === 'online' || mode === 'ranked' || mode === 'leaderboard' || mode === 'multiplayer') {
-      setStatus('err', 'Server offline');
+    if (mode === 'multiplayer' && wasOnline) {
+      stopClock();
+      if (!serverOfflineGameNoticeShown) {
+        serverOfflineGameNoticeShown = true;
+        addChat('System', 'Server connection lost. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
+      }
     }
   } else if (serverWasOffline) {
     serverWasOffline = false;
+    serverOfflineGameNoticeShown = false;
     rankedMsg('ranked-auth-msg', 'Server connection restored.', 'ok');
-    if (mode === 'multiplayer' && conn?.open && !opponentDisconnected) setStatus('on', 'Connected');
+    if (mode === 'multiplayer' && conn?.open && !opponentDisconnected) {
+      addChat('System', 'Server connection restored. Online actions are available again.', 'sys');
+      if (timerEnabled && !gameOver && !isReconnecting) startClock();
+    }
     if (rankedUser) await validateRankedSession({ silent: true });
     await loadRankedLeaderboard();
+  }
+  updateHeaderStatus();
+};
+
+const setUpdateRequired = (required, info=null) => {
+  const wasRequired = updateRequired;
+  updateRequired = required;
+  appVersionInfo = info || appVersionInfo;
+  applyOnlineFeatureGate();
+  if (required && !wasRequired && mode === 'multiplayer') {
+    stopClock();
+    if (!serverOfflineGameNoticeShown) {
+      serverOfflineGameNoticeShown = true;
+      addChat('System', 'Update required. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
+    }
+  } else if (!required && wasRequired && mode === 'multiplayer') {
+    serverOfflineGameNoticeShown = false;
+    if (timerEnabled && !gameOver && !isReconnecting && conn?.open) startClock();
+  }
+  updateHeaderStatus();
+};
+
+const checkAppVersion = async () => {
+  if (!sb) return true;
+  try {
+    const { data, error } = await sb
+      .from('app_version_gate')
+      .select('latest_version, minimum_supported_version, download_url, release_notes')
+      .eq('id', true)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      setUpdateRequired(false);
+      return true;
+    }
+    appVersionInfo = data;
+    const minimum = data.minimum_supported_version || data.latest_version;
+    const required = minimum && compareVersions(APP_VERSION, minimum) < 0;
+    setUpdateRequired(required, data);
+    return !required;
+  } catch (err) {
+    console.warn('Version check failed:', err);
+    setUpdateRequired(false);
+    return true;
   }
 };
 
@@ -1482,6 +1637,7 @@ const checkServerConnection = async () => {
     const { error } = await sb.from('profiles').select('id').limit(1);
     if (error) throw error;
     await setServerOnline(true);
+    await checkAppVersion();
     return true;
   } catch (err) {
     await setServerOnline(false, `Server unavailable: ${err.message || err}`);
@@ -1490,9 +1646,39 @@ const checkServerConnection = async () => {
 };
 
 const requireServerOnline = (message='This online feature is unavailable while the server is disconnected.') => {
-  if (serverOnline) return true;
+  if (serverOnline && !updateRequired) return true;
+  if (updateRequired) {
+    dlg('Update Required', versionUpdateMessage());
+    return false;
+  }
   dlg('Server Offline', message);
   return false;
+};
+
+const downloadLatestHtml = async () => {
+  const expected = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
+  if (APP_DOWNLOAD_URL !== expected) {
+    dlg('Update Error', 'Download URL is not the approved GitHub HTML file.');
+    return;
+  }
+  try {
+    const res = await fetch(expected, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
+    const text = await res.text();
+    if (!text.includes('<!DOCTYPE html') || !text.includes('APP_VERSION')) {
+      throw new Error('Downloaded file did not look like the Open Chess HTML client.');
+    }
+    const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'chess_client.html';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  } catch (err) {
+    dlg('Download Failed', `Could not download the latest chess_client.html from GitHub: ${err.message || err}`);
+  }
 };
 
 const cleanUsername = (value) => {
@@ -1600,8 +1786,47 @@ const isNewerAccountPresence = (presence) => {
   return otherStarted === accountSessionStartedAt && String(presence.instanceId) > String(clientInstanceId);
 };
 
+const accountEpochKey = (userId) => `open-chess-signin-epoch-${userId}`;
+
+const storedAccountEpoch = (user) => {
+  if (!user?.id) return 0;
+  const saved = Number(localStorage.getItem(accountEpochKey(user.id)) || 0);
+  return saved || Date.parse(user.last_sign_in_at || '') || Date.now();
+};
+
+const rememberAccountEpoch = (user, epoch=Date.now()) => {
+  if (!user?.id) return epoch;
+  try { localStorage.setItem(accountEpochKey(user.id), String(epoch)); } catch(e) {}
+  return epoch;
+};
+
+const claimAccountSession = async () => {
+  if (!sb || !rankedUser || !serverOnline) return true;
+  try {
+    const { data, error } = await sb.rpc('claim_account_session', {
+      p_instance_id: clientInstanceId,
+      p_started_at: new Date(accountSessionStartedAt || Date.now()).toISOString()
+    });
+    if (error) throw error;
+    accountPresenceFailureCount = 0;
+    if (data?.active === false) {
+      await handleDuplicateAccountInstance('another browser');
+      return false;
+    }
+    return true;
+  } catch (err) {
+    accountPresenceFailureCount++;
+    const msg = String(err?.message || err || '').toLowerCase();
+    if (!msg.includes('claim_account_session')) {
+      console.warn('Account session claim failed:', err);
+    }
+    return true;
+  }
+};
+
 const publishAccountPresence = async () => {
   if (!sb || !rankedUser) return;
+  if (!(await claimAccountSession())) return;
   accountPresencePingAt = Date.now();
   const payload = {
     type: 'account-active',
@@ -1620,8 +1845,9 @@ const publishAccountPresence = async () => {
 
 const startAccountPresence = async () => {
   if (!sb || !rankedUser) return;
-  accountSessionStartedAt = accountSignInEpoch || Date.now();
+  accountSessionStartedAt = accountSignInEpoch || storedAccountEpoch(rankedUser);
   accountPresencePingAt = accountSessionStartedAt;
+  if (!(await claimAccountSession())) return;
 
   try {
     if (!accountBroadcast && 'BroadcastChannel' in window) {
@@ -1702,8 +1928,10 @@ const clearRankedSession = (message='', kind='') => {
   myAvatarUrl = null;
   avatarCrop.file = null;
   renderRankedAuth();
+  show('ranked-username', false);
   updateOnlineNameUI();
   if (message) rankedMsg('ranked-auth-msg', message, kind);
+  updateHeaderStatus();
 };
 
 const signOutAndClearRanked = async (message='', kind='') => {
@@ -1790,7 +2018,7 @@ const validateRankedSession = async ({ retries = 3, silent = false, welcome = fa
       return false;
     }
     rankedUser = data.user;
-    if (!accountSignInEpoch) accountSignInEpoch = Date.now();
+    if (!accountSignInEpoch) accountSignInEpoch = storedAccountEpoch(rankedUser);
     const ok = await loadRankedProfile(retries);
     if (!ok) {
       await signOutAndClearRanked(ACCOUNT_MISSING_MSG, 'err');
@@ -1851,6 +2079,7 @@ const renderRankedAuth = () => {
   if (!signedIn) {
     $('side-ranked-account').textContent = 'Sign in from the Ranked lobby.';
     updateMenuAccount();
+    updateHeaderStatus();
     return;
   }
   const p = rankedProfile || {};
@@ -1865,6 +2094,7 @@ const renderRankedAuth = () => {
   $('side-ranked-account').textContent = `${name} · ${p.rating ?? 1200} ELO`;
   setRankedAvatar(p);
   updateMenuAccount();
+  updateHeaderStatus();
 };
 
 const initSupabase = async () => {
@@ -1908,6 +2138,7 @@ const initSupabase = async () => {
 const rankedSignIn = async () => {
   if (!sb) return;
   if (!requireServerOnline('Sign in is unavailable while the server is disconnected.')) return;
+  show('ranked-username', false);
   const email = $('ranked-email').value.trim();
   const password = $('ranked-password').value;
   if (!email || !password) {
@@ -1927,7 +2158,7 @@ const rankedSignIn = async () => {
       return;
     }
     rankedUser = data.user;
-    accountSignInEpoch = Date.now();
+    accountSignInEpoch = rememberAccountEpoch(rankedUser, Date.now());
     const ok = await loadRankedProfile(8);
     if (!ok) {
       await signOutAndClearRanked(ACCOUNT_MISSING_MSG, 'err');
@@ -1947,6 +2178,12 @@ const rankedSignIn = async () => {
 const rankedSignUp = async () => {
   if (!sb) return;
   if (!requireServerOnline('Account creation is unavailable while the server is disconnected.')) return;
+  if ($('ranked-username').style.display === 'none') {
+    show('ranked-username', true);
+    $('ranked-username').focus();
+    rankedMsg('ranked-auth-msg', 'Choose a username, then click Create again.', '');
+    return;
+  }
   const username = cleanUsername($('ranked-username').value);
   if (!username) {
     rankedMsg('ranked-auth-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
@@ -1994,7 +2231,7 @@ const rankedSignUp = async () => {
   }
 
   rankedUser = data.user;
-  accountSignInEpoch = Date.now();
+  accountSignInEpoch = rememberAccountEpoch(rankedUser, Date.now());
   const ok = await loadRankedProfile(8);
   if (!ok) {
     await signOutAndClearRanked(ACCOUNT_MISSING_MSG, 'err');
@@ -2288,7 +2525,7 @@ const updateCaptures = () => {
       stack.title = `${group.items.length} captured ${group.t.toUpperCase()}`;
       group.items.forEach(() => {
         const d = document.createElement('span');
-        d.className = 'cap-piece';
+        d.className = `cap-piece ${group.c === 'b' ? 'black' : 'white'}`;
         d.innerHTML = PIECE_SVGS[pieceStyle]?.[`${group.c}${group.t.toUpperCase()}`] || '';
         stack.appendChild(d);
       });
@@ -2431,6 +2668,7 @@ const updateStatus = () => {
       badge.textContent = 'Draw — 50 moves'; gameOverReason = badge.textContent;
     }
     if (!gameOverReason) gameOverReason = 'Game Over';
+    showGameEndFeedback();
     if (mode === 'multiplayer') recordRoomResult();
     show('btn-pgn', true);
     if (mode === 'multiplayer') {
@@ -2482,6 +2720,33 @@ const updateGameActionLabels = () => {
     btn.lastChild.textContent = ' Resign';
     btn.title = 'Resign';
   }
+};
+
+const gameEndSummary = () => {
+  const reason = gameOverReason || 'Game Over';
+  const lower = reason.toLowerCase();
+  if (lower.includes('checkmate')) return { icon: '#', title: 'Checkmate', sub: reason };
+  if (lower.includes('stalemate')) return { icon: '=', title: 'Stalemate', sub: 'The game is drawn.' };
+  if (lower.includes('resignation')) return { icon: 'R', title: 'Resignation', sub: reason };
+  if (lower.includes('time')) return { icon: '0:00', title: 'Time', sub: reason };
+  if (lower.includes('draw')) return { icon: '=', title: 'Draw', sub: reason };
+  if (lower.includes('aborted')) return { icon: '-', title: 'Aborted', sub: reason };
+  if (lower.includes('disconnect')) return { icon: '!', title: 'Disconnection', sub: reason };
+  return { icon: '1-0', title: 'Game Over', sub: reason };
+};
+
+const showGameEndFeedback = () => {
+  if (!gameOver || !gameOverReason || gameEndFlashShownFor === gameOverReason) return;
+  gameEndFlashShownFor = gameOverReason;
+  const summary = gameEndSummary();
+  $('game-end-icon').textContent = summary.icon;
+  $('game-end-title').textContent = summary.title;
+  $('game-end-sub').textContent = summary.sub;
+  const flash = $('game-end-flash');
+  flash.classList.remove('on');
+  void flash.offsetWidth;
+  flash.classList.add('on');
+  setTimeout(() => flash.classList.remove('on'), 1900);
 };
 
 const submitRankedGameResult = async (result) => {
@@ -2790,7 +3055,9 @@ const leaveActiveGame = async () => {
   const aborting = isRankedGame && !gameOver && localRankedCanAbort();
   const body = gameOver
     ? 'Leave the game review and return to the lobby?'
-    : aborting
+    : onlineFeaturesPaused() && mode === 'multiplayer'
+      ? 'Online services are currently unavailable. Leaving now returns to the lobby and this in-progress game cannot be resumed from this browser session if services become available again. Leave anyway?'
+      : aborting
       ? 'Abort this ranked game before your first move and return to the lobby? No rating change will be applied.'
       : isRankedGame
         ? 'Leaving now will count as a loss. Return to the lobby?'
@@ -2833,8 +3100,26 @@ $('btn-pgn').onclick = () => {
 
 // ─── LOBBY MANAGEMENT ───
 const goLobby = () => {
+  const lobbyMode = mode === 'multiplayer'
+    ? (isRankedGame || isRanked ? 'ranked' : 'online')
+    : mode;
   show('game-wrap', false); $('game-wrap').classList.remove('on');
   show('lobby', true);
+  mode = lobbyMode;
+  const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
+  $('lobby').dataset.mode = mode;
+  $('screen-title').textContent = copy.title;
+  $('screen-kicker').textContent = copy.kicker;
+  $('app-title').textContent = `${copy.title} Chess`;
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.classList.toggle('on', item.dataset.menuMode === mode);
+  });
+  $('menu-account').classList.toggle('on', mode === 'account');
+  $('sect-local').classList.toggle('on', mode === 'local');
+  $('sect-online').classList.toggle('on', mode === 'online');
+  $('sect-ranked').classList.toggle('on', mode === 'ranked');
+  $('sect-account').classList.toggle('on', mode === 'account');
+  show('ranked-leaderboard-panel', mode === 'ranked');
   syncHeaderMode();
   show('share-box', false);
   
@@ -2844,11 +3129,14 @@ const goLobby = () => {
   show('btn-show-rooms', mode === 'online');
   show('ranked-matchmaking-card', mode === 'ranked' && signedIn);
   show('ranked-matchmaking-locked-card', mode === 'ranked' && !signedIn);
+  show('btn-create-ranked', mode === 'ranked' && signedIn);
+  show('btn-show-rooms-ranked', mode === 'ranked' && signedIn);
   show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
 
   // Reset ranked matchmaking settings
   isRanked = false;
   isRankedGame = false;
+  matchmakingMode = null;
   rankedResultSubmitted = false;
   rankedLiveGameId = null;
   hostUserId = null;
@@ -2869,6 +3157,7 @@ const goLobby = () => {
   }
 
   chess.reset(); selSq = null; legalDests = []; gameOver = false; gameOverReason = '';
+  gameEndFlashShownFor = '';
   stopClock();
   closeTransport();
   conn = null; isHost = false; roomId = null;
@@ -2876,6 +3165,7 @@ const goLobby = () => {
   isReconnecting = false;
   opponentDisconnected = false;
   rematchBlockedReason = '';
+  serverOfflineGameNoticeShown = false;
   if (reconnectTimeout) { clearTimeout(reconnectTimeout); reconnectTimeout = null; }
   if (guestReconnectInterval) { clearInterval(guestReconnectInterval); guestReconnectInterval = null; }
   opponentName = 'Opponent';
@@ -2891,6 +3181,7 @@ const goLobby = () => {
   show('btn-pgn', false);
   show('btn-rematch', false);
   setStatus('', 'Offline');
+  updateHeaderStatus();
 };
 
 const goGame = () => {
@@ -2900,7 +3191,9 @@ const goGame = () => {
   }
 
   show('lobby', false);
+  show('ranked-leaderboard-panel', false);
   show('game-wrap', true); $('game-wrap').classList.add('on');
+  serverOfflineGameNoticeShown = false;
   syncHeaderMode();
   show('btn-pgn', false);
   show('btn-rematch', false);
@@ -2924,6 +3217,7 @@ const goGame = () => {
   }
 
   selSq = null; legalDests = []; gameOver = false; gameOverReason = ''; gameResultRecorded = false;
+  gameEndFlashShownFor = '';
 
   // Init timers
   if (activeTC.base > 0) {
@@ -2995,14 +3289,16 @@ const getSelectedTC = () => {
 
 // ─── STATUS INDICATOR ───
 const setStatus = (cls, txt) => {
-  $('st-dot').className = `dot ${cls}`;
-  $('st-txt').textContent = txt;
+  headerStatusOverride = txt && !(txt === 'Offline' && serverOnline)
+    ? { cls, txt }
+    : null;
+  updateHeaderStatus();
 };
 
 const RECONNECT_GRACE_MS = 15000;
 const RECONNECT_RETRY_MS = 2500;
 
-const onlineReady = () => mode !== 'multiplayer' || (serverOnline && conn && conn.open && !isReconnecting && !opponentDisconnected);
+const onlineReady = () => mode !== 'multiplayer' || (!onlineFeaturesPaused() && conn && conn.open && !isReconnecting && !opponentDisconnected);
 
 const sendPeer = (payload) => {
   if (!conn || !conn.open || isReconnecting || opponentDisconnected) return false;
@@ -3089,6 +3385,50 @@ const closeTransport = () => {
   setTimeout(() => { intentionalDisconnect = false; }, 0);
 };
 
+const hasOpenMatchmakingRoom = () => !!(roomId && isHost && !conn && matchmakingMode);
+
+const setMatchmakingControlsLocked = (locked) => {
+  document.querySelectorAll('#setup-options input, #setup-options select').forEach(el => {
+    el.disabled = false;
+    el.title = '';
+  });
+};
+
+const syncMatchmakingUi = () => {
+  const open = hasOpenMatchmakingRoom();
+  setMatchmakingControlsLocked(open);
+  if (!open) return;
+  show('share-box', true);
+  show('setup-options', true);
+  show('btn-create', false);
+  show('btn-show-rooms', false);
+  if (mode === 'ranked') {
+    show('ranked-matchmaking-card', !!rankedUser);
+    show('ranked-matchmaking-locked-card', false);
+    show('btn-create-ranked', false);
+    show('btn-show-rooms-ranked', false);
+  }
+};
+
+const cancelOpenMatchmakingRoom = (reason='Room closed.') => {
+  if (!hasOpenMatchmakingRoom()) return;
+  const oldRoom = roomId;
+  if (oldRoom) removeRoom(oldRoom);
+  if (announceInterval) {
+    clearInterval(announceInterval);
+    announceInterval = null;
+  }
+  closeTransport();
+  roomId = null;
+  isHost = false;
+  matchmakingMode = null;
+  isRanked = false;
+  show('share-box', false);
+  setMatchmakingControlsLocked(false);
+  setStatus('', 'Offline');
+  if (reason) rankedMsg('ranked-auth-msg', reason, '');
+};
+
 const rejectCurrentJoin = (reason, message) => {
   try {
     if (conn && conn.open) conn.send({ type: 'join_rejected', reason, message });
@@ -3126,7 +3466,7 @@ const sendHandshakeKey = async () => {
 
 const markConnected = () => {
   isReconnecting = false;
-  opponentDisconnected = false;
+  if (!gameOver) opponentDisconnected = false;
   if (reconnectTimeout) { clearTimeout(reconnectTimeout); reconnectTimeout = null; }
   if (guestReconnectInterval) { clearInterval(guestReconnectInterval); guestReconnectInterval = null; }
   setOpponentReconnectLabel(false);
@@ -3137,7 +3477,7 @@ const markConnected = () => {
 };
 
 const finishDisconnectWin = async () => {
-  if (mode !== 'multiplayer' || gameOver) return;
+  if (mode !== 'multiplayer' || gameOver || opponentDisconnected) return;
   const rankedWin = await resolveRankedDisconnect();
   const winner = myColor === 'w' ? 'White' : 'Black';
   gameOver = true;
@@ -3256,6 +3596,7 @@ $('ranked-save-profile').onclick = rankedSaveProfile;
 $('ranked-sign-out').onclick = rankedSignOut;
 $('ranked-delete-account').onclick = rankedDeleteAccount;
 $('ranked-refresh').onclick = loadRankedLeaderboard;
+$('update-download').onclick = downloadLatestHtml;
 $('ranked-avatar-file').onchange = async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -3541,7 +3882,7 @@ const renderRoomsList = () => {
     const statusText = room.status === 'in_game' ? 'In game' : 'Open';
     detailParts.push(statusText);
     detailParts.push(`Score W ${score.w || 0} - B ${score.b || 0}${score.draws ? ` - D ${score.draws}` : ''}`);
-    if (room.status !== 'in_game') {
+    if (!room.ranked && room.status !== 'in_game') {
       const guestColor = room.hostColor === 'w' ? 'Black' : room.hostColor === 'b' ? 'White' : 'Random';
       detailParts.push(`Plays as ${guestColor}`);
     }
@@ -3596,6 +3937,7 @@ $('btn-start-local').onclick = () => {
 // ─── ONLINE: CREATE ───
 $('btn-create').onclick = () => {
   if (!requireServerOnline('Online games are unavailable while the server is disconnected.')) return;
+  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') cancelOpenMatchmakingRoom('Closed the ranked room before opening an online room.');
   isRanked = false;
   isRankedGame = false;
   hostUserId = rankedUser?.id || null;
@@ -3611,6 +3953,7 @@ $('btn-create').onclick = () => {
   }
   roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
   isHost = true;
+  matchmakingMode = 'online';
   roomScore = { w: 0, b: 0, draws: 0 };
   gameResultRecorded = false;
   setStatus('wait', 'Creating...');
@@ -3640,7 +3983,8 @@ $('btn-create').onclick = () => {
     show('share-box', true);
     show('btn-create', false);
     show('btn-show-rooms', false);
-    show('setup-options', false);
+    show('setup-options', true);
+    syncMatchmakingUi();
 
     // Announce room in the global discovery lobby
     initLobby();
@@ -3677,6 +4021,7 @@ $('btn-create-ranked').onclick = () => {
     dlg('Authentication Required', 'You must be signed in to play ranked games.');
     return;
   }
+  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'ranked') cancelOpenMatchmakingRoom('Closed the online room before opening a ranked room.');
   isRanked = true;
   isRankedGame = false;
   myName = rankedProfile?.username || rankedUser.email || 'Player';
@@ -3687,6 +4032,7 @@ $('btn-create-ranked').onclick = () => {
   gameBlackId = null;
   roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
   isHost = true;
+  matchmakingMode = 'ranked';
   roomScore = { w: 0, b: 0, draws: 0 };
   gameResultRecorded = false;
   rankedResultSubmitted = false;
@@ -3701,9 +4047,7 @@ $('btn-create-ranked').onclick = () => {
   activeHcBMul = hcBMul;
   activeHcPiece = hcPiece;
 
-  // Set chosen color from ranked color row
-  const chosen = document.querySelector('#sect-ranked .c-btn.on')?.dataset.c || 'w';
-  myColor = chosen;
+  myColor = Math.random() < 0.5 ? 'w' : 'b';
 
   peer = new Peer('chess-' + roomId, {
     config: {
@@ -3718,8 +4062,11 @@ $('btn-create-ranked').onclick = () => {
     setStatus('wait', 'Waiting...');
     $('room-code').textContent = roomId;
     show('share-box', true);
-    show('setup-options', false);
-    show('ranked-matchmaking-card', false);
+    show('setup-options', true);
+    show('ranked-matchmaking-card', true);
+    show('btn-create-ranked', false);
+    show('btn-show-rooms-ranked', false);
+    syncMatchmakingUi();
 
     // Announce room in the global discovery lobby
     initLobby();
@@ -3758,11 +4105,13 @@ $('btn-cancel-create').onclick = () => {
     clearInterval(announceInterval);
     announceInterval = null;
   }
+  matchmakingMode = null;
   goLobby();
 };
 
 const joinRoom = (code) => {
   if (!requireServerOnline('Online games are unavailable while the server is disconnected.')) return;
+  if (hasOpenMatchmakingRoom()) cancelOpenMatchmakingRoom('Closed the open room before joining another challenge.');
   // Close lobby socket during game
   if (lobbyWs) {
     try { lobbyWs.close(); } catch(e){}
@@ -3824,6 +4173,7 @@ const setupConn = () => {
         if (Date.now() - lastRecvTime > RECONNECT_GRACE_MS) {
           clearInterval(heartbeat);
           if (mode === 'multiplayer' && gameOver) {
+            if (opponentDisconnected) return;
             opponentDisconnected = true;
             setStatus('', 'Disconnected');
             setOpponentDisconnectedLabel();
@@ -3841,8 +4191,7 @@ const setupConn = () => {
     }, 5000);
 
     if (isHost) {
-      const chosenSelector = isRanked ? '#sect-ranked .c-btn.on' : '#sect-online .c-btn.on';
-      let chosen = document.querySelector(chosenSelector)?.dataset.c || 'w';
+      let chosen = isRanked ? 'random' : (document.querySelector('#sect-online .c-btn.on')?.dataset.c || 'w');
       if (chosen === 'random') chosen = Math.random() < .5 ? 'w' : 'b';
       myColor = chosen;
     } else {
@@ -3863,6 +4212,7 @@ const setupConn = () => {
   conn.on('close', () => {
     clearInterval(heartbeat);
     if (intentionalDisconnect) return;
+    if (opponentDisconnected) return;
     if (mode === 'multiplayer' && gameOver) {
       opponentDisconnected = true;
       setStatus('', 'Disconnected');
@@ -4408,6 +4758,7 @@ const handleMsg = async (d) => {
 
 $('btn-show-rooms').onclick = () => {
   if (!requireServerOnline('Online challenges are unavailable while the server is disconnected.')) return;
+  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') cancelOpenMatchmakingRoom('Closed the ranked room before opening online challenges.');
   lobbyFilterMode = 'online';
   $('btn-close-rooms').textContent = 'Close';
   $('m-rooms-lobby').classList.add('on');
@@ -4426,6 +4777,7 @@ $('btn-show-rooms-ranked').onclick = () => {
     dlg('Authentication Required', 'You must be signed in to view ranked challenges.');
     return;
   }
+  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'ranked') cancelOpenMatchmakingRoom('Closed the online room before opening ranked challenges.');
   lobbyFilterMode = 'ranked';
   $('btn-close-rooms').textContent = 'Close';
   $('m-rooms-lobby').classList.add('on');
@@ -4461,11 +4813,22 @@ $('btn-refresh-rooms').onclick = () => {
 
 const onSettingChange = () => {
   if (isHost && roomId && !conn) {
-    const chosen = document.querySelector('#sect-online .c-btn.on')?.dataset.c || 'w';
-    myColor = chosen;
-    hcWMul = parseFloat($('hc-w-time').value);
-    hcBMul = parseFloat($('hc-b-time').value);
-    hcPiece = $('hc-pieces').value;
+    if (!isRanked) {
+      myColor = document.querySelector('#sect-online .c-btn.on')?.dataset.c || 'w';
+    }
+    activeTC = getSelectedTC();
+    if (isRanked) {
+      hcWMul = 1;
+      hcBMul = 1;
+      hcPiece = 'none';
+    } else {
+      hcWMul = parseFloat($('hc-w-time').value);
+      hcBMul = parseFloat($('hc-b-time').value);
+      hcPiece = $('hc-pieces').value;
+    }
+    activeHcWMul = hcWMul;
+    activeHcBMul = hcBMul;
+    activeHcPiece = hcPiece;
     announceRoom();
   }
 };
@@ -4557,6 +4920,7 @@ window.onload = () => {
   populatePieceSelect();
   setAppMode('local', false);
   syncHeaderMode();
+  updateHeaderStatus();
   initSupabase();
 };
 </script>
