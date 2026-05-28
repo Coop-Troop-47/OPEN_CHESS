@@ -16,7 +16,7 @@
   --bg:#1b1b1f;--bg2:#232328;--bg3:#2c2c33;--bg4:#38383f;
   --border:#3a3a42;--border2:#4a4a52;
   --text:#e8e8ed;--text2:#a0a0ab;--text3:#6b6b78;
-  --accent:#5b8af0;--accent2:#4a7ae0;--accent-dim:rgba(91,138,240,0.12);
+  --accent:#5b8af0;--accent2:#4a7ae0;--accent-dim:rgba(91,138,240,0.12);--accent-glow:rgba(91,138,240,.24);
   --green:#4caf50;--red:#e05555;--yellow:#e0b850;--orange:#e08850;
   --sq-l:#ebecd0;--sq-d:#779556;--sq-l-t:#779556;--sq-d-t:#ebecd0;
   --sq-sel:rgba(255,255,50,0.42);--sq-move:rgba(255,255,0,0.36);
@@ -24,10 +24,10 @@
   --piece-shadow:drop-shadow(0 1px 2px rgba(0,0,0,.2));
   --ghost-shadow:drop-shadow(0 6px 12px rgba(0,0,0,.35));
   --font:'Inter',system-ui,-apple-system,sans-serif;
-  --board-sz:min(580px,calc(100vw - 32px),calc(100vh - 240px));
+  --board-sz:min(580px,calc(100vw - 32px),max(280px,calc(100dvh - 170px)));
 }
-html{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.45}
-body{min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;user-select:none}
+html{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;width:100%;max-width:100%;overflow-x:hidden}
+body{width:100%;max-width:100%;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;user-select:none}
 a{color:var(--accent);text-decoration:none}
 input,select,textarea,button{font-family:inherit;font-size:inherit}
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -35,20 +35,20 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
 /* ── HEADER ── */
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
-.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:rgba(35,35,40,.96);border-bottom:1px solid var(--border);flex-shrink:0;backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
+.hdr-left{display:flex;align-items:center;gap:10px;min-width:0}
 .hdr-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;letter-spacing:-0.3px}
 .hdr-logo svg{width:22px;height:22px;fill:var(--text)}
-.hdr-right{display:flex;align-items:center;gap:10px}
-.hdr-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;font-size:12px;font-weight:600;transition:background .15s}
-.hdr-btn:hover{background:var(--bg4)}
+.hdr-right{display:flex;align-items:center;gap:8px;min-width:0}
+.hdr-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;font-size:12px;font-weight:600;transition:background .15s,border-color .15s,color .15s,transform .15s;min-height:30px;white-space:nowrap}
+.hdr-btn:hover{background:var(--bg4);border-color:var(--border2);transform:translateY(-1px)}
 .hdr-btn svg{width:14px;height:14px;fill:currentColor}
 .hdr-btn.danger{color:var(--red);border-color:rgba(224,85,85,.35)}
 .hdr-btn.danger:hover{background:rgba(224,85,85,.12);color:#ff8585}
 .hdr-btn.report{color:var(--text2)}
 .hdr-btn.report:hover{color:var(--text)}
-.icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;transition:background .15s,color .15s}
-.icon-btn:hover{background:var(--bg4);color:var(--text)}
+.icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;transition:background .15s,border-color .15s,color .15s,transform .15s;flex-shrink:0}
+.icon-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--text);transform:translateY(-1px)}
 .icon-btn svg{width:18px;height:18px;fill:currentColor}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
 .dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
@@ -64,20 +64,20 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 .menu-head{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;border-bottom:1px solid var(--border)}
 .menu-title{font-weight:800;font-size:14px}
 .menu-nav{padding:10px;display:flex;flex-direction:column;gap:6px}
-.menu-item{width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid transparent;color:var(--text2);border-radius:5px;padding:10px;cursor:pointer;text-align:left;font-weight:700;transition:background .15s,border-color .15s,color .15s}
-.menu-item:hover{background:var(--bg3);color:var(--text)}
+.menu-item{width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid transparent;color:var(--text2);border-radius:5px;padding:10px;cursor:pointer;text-align:left;font-weight:700;transition:background .15s,border-color .15s,color .15s,transform .15s}
+.menu-item:hover{background:var(--bg3);color:var(--text);transform:translateX(2px)}
 .menu-item.on{background:var(--accent-dim);border-color:rgba(91,138,240,.45);color:var(--text)}
 .menu-item svg{width:18px;height:18px;fill:currentColor;flex-shrink:0}
 .menu-spacer{flex:1}
-.menu-account{margin:10px;padding:10px;border:1px solid var(--border);background:var(--bg3);border-radius:5px;display:flex;align-items:center;gap:10px;color:var(--text);cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
-.menu-account:hover{background:var(--bg4);border-color:var(--border2)}
+.menu-account{margin:10px;padding:10px;border:1px solid var(--border);background:var(--bg3);border-radius:5px;display:flex;align-items:center;gap:10px;color:var(--text);cursor:pointer;text-align:left;transition:background .15s,border-color .15s,transform .15s}
+.menu-account:hover{background:var(--bg4);border-color:var(--border2);transform:translateY(-1px)}
 .menu-account.on{border-color:rgba(91,138,240,.55);background:var(--accent-dim)}
 .menu-account-avatar{width:34px;height:34px;border-radius:4px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text2);object-fit:cover;flex-shrink:0}
 .menu-account-main{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .menu-account-sub{font-size:11px;color:var(--text3);margin-top:1px}
 
 /* ── MAIN LAYOUT ── */
-main{flex:1;min-height:calc(100vh - 48px);display:flex;justify-content:center;align-items:center;padding:16px;gap:16px}
+main{width:100%;flex:1;min-height:calc(100dvh - 48px);display:flex;justify-content:center;align-items:center;padding:16px;gap:16px;overflow-x:hidden}
 body.game-active main{align-items:flex-start}
 body.ranked-lobby main{gap:8px}
 body.ranked-lobby main #lobby, body.ranked-lobby main #ranked-leaderboard-panel{margin:0}
@@ -147,7 +147,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .app-version{position:fixed;right:7px;bottom:5px;z-index:20;color:var(--text3);font-size:10px;font-weight:700;opacity:.55;pointer-events:none;font-variant-numeric:tabular-nums}
 
 /* ── SIDE PANEL ── */
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 14px 34px rgba(0,0,0,.16)}
 .panel-head{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .panel-head h3{font-size:13px;font-weight:700}
 .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);text-transform:uppercase;letter-spacing:.3px}
@@ -156,9 +156,9 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .badge.chk{color:var(--red);border-color:rgba(224,85,85,.3)}
 
 .tabs{display:flex;border-bottom:1px solid var(--border)}
-.tab{flex:1;padding:8px;text-align:center;font-weight:600;font-size:12px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:color .15s}
+.tab{flex:1;padding:8px;text-align:center;font-weight:600;font-size:12px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:color .15s,background .15s,border-color .15s}
 .tab:hover{color:var(--text2)}
-.tab.on{color:var(--text);border-color:var(--accent)}
+.tab.on{color:var(--text);border-color:var(--accent);background:var(--accent-dim)}
 .tab-bd{flex:1;display:none;overflow-y:auto;padding:10px 12px;flex-direction:column}
 .tab-bd.on{display:flex}
 
@@ -252,7 +252,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .bug-report-status.err{color:var(--red)}
 
 /* ── LOBBY ── */
-.lobby{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:100%;max-width:480px;margin:0 auto}
+.lobby{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:100%;max-width:480px;min-width:0;margin:0 auto;box-shadow:0 16px 40px rgba(0,0,0,.18);animation:panelIn .22s ease}
 .lobby h2{font-size:18px;text-align:center;margin-bottom:18px;font-weight:700}
 .screen-kicker{text-align:center;color:var(--text3);font-size:12px;margin:-10px 0 16px}
 
@@ -261,11 +261,12 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .inp-grp label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
 .inp-grp input,.inp-grp select{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);font-size:13px}
 .inp-grp input:focus,.inp-grp select:focus{outline:none;border-color:var(--accent)}
+#name-grp-double > div,#name-grp-double > div > div{min-width:0}
 
 /* Time control grid */
 .tc-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px}
 .tc-cat{font-size:10px;color:var(--text3);font-weight:700;margin:8px 0 4px;text-transform:uppercase;letter-spacing:.5px}
-.tc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+.tc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-bottom:8px}
 .tc-btn{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:8px 4px;cursor:pointer;text-align:center;font-weight:700;font-size:13px;color:var(--text2);transition:all .12s;line-height:1.1}
 .tc-btn:hover{border-color:var(--text3);color:var(--text)}
 .tc-btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
@@ -286,14 +287,17 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .hc-row{display:flex;gap:8px;margin-bottom:12px}
 .hc-row .inp-grp{flex:1;margin-bottom:0}
 
-.btn{width:100%;padding:10px;background:var(--accent);border:none;border-radius:3px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn:hover{background:var(--accent2)}
+.btn{width:100%;padding:10px;background:var(--accent);border:none;border-radius:3px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s,transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px}
+.btn:hover{background:var(--accent2);box-shadow:0 8px 20px var(--accent-glow);transform:translateY(-1px)}
 .btn:active{transform:scale(.98)}
 .btn.sec{background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
 .btn.sec:hover{background:var(--bg4);color:var(--text)}
 .btn.danger{background:#cf3c3c;color:#fff}
 .btn.danger:hover{background:#b53030}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:disabled:hover{transform:none;box-shadow:none}
+.is-locked{opacity:.55;pointer-events:none}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 .divider{display:flex;align-items:center;margin:14px 0;color:var(--text3);font-size:11px;gap:8px}
 .divider::before,.divider::after{content:'';flex:1;border-bottom:1px solid var(--border)}
@@ -302,11 +306,16 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .room-code{font-size:22px;font-weight:800;letter-spacing:3px;color:var(--text);background:var(--bg);padding:6px 16px;border-radius:3px;margin:8px 0;border:1px dashed var(--accent);display:inline-block;font-variant-numeric:tabular-nums}
 .share-box p{font-size:11px;color:var(--text3);margin-top:6px}
 
-.server-banner{display:none;margin:-4px 0 12px;padding:9px 11px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.1);color:#ffb0b0;border-radius:4px;font-size:12px;font-weight:700;text-align:center;line-height:1.35}
-.server-banner button{margin-top:8px;width:auto;display:inline-flex;padding:7px 12px;font-size:12px}
+.server-banner{display:none;margin:-4px 0 12px;padding:12px;border:1px solid rgba(224,85,85,.34);background:linear-gradient(135deg,rgba(224,85,85,.12),rgba(224,184,80,.07));color:var(--text);border-radius:6px;font-size:12px;font-weight:600;text-align:left;line-height:1.35;box-shadow:0 10px 28px rgba(0,0,0,.14)}
+.server-banner-inner{display:flex;gap:10px;align-items:flex-start}
+.server-banner-icon{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;background:rgba(224,85,85,.16);color:#ffb0b0;font-weight:900;flex-shrink:0}
+.server-banner-copy{min-width:0;flex:1}
+.server-banner-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.35px;color:#ffd0d0;margin-bottom:3px}
+.server-banner-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.server-banner button{width:auto;display:inline-flex;padding:7px 12px;font-size:12px}
 body.server-offline .server-banner,body.update-required .server-banner{display:block}
 
-body.server-offline [data-online-only],body.update-required [data-online-only]{opacity:.5;pointer-events:none}
+body.browser-offline [data-online-only],body.server-offline [data-service-only],body.update-required [data-online-only]{opacity:.5;pointer-events:none}
 
 /* Active rooms list styling */
 .rooms-list {
@@ -327,6 +336,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
   justify-content: space-between;
   align-items: center;
   transition: border-color 0.15s, background-color 0.15s;
+  gap: 10px;
 }
 .room-card:hover {
   border-color: var(--border2);
@@ -337,6 +347,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
   flex-direction: column;
   gap: 2px;
   text-align: left;
+  min-width: 0;
 }
 .room-host {
   font-weight: 600;
@@ -346,6 +357,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
 .room-details {
   font-size: 11px;
   color: var(--text2);
+  overflow-wrap: anywhere;
 }
 .room-join-btn {
   background: var(--accent);
@@ -386,14 +398,18 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
 }
 
 /* ── MODALS ── */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-bg.on{opacity:1;pointer-events:auto}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:90%;max-width:380px;text-align:center;transform:scale(.92);transition:transform .2s}
-.modal-bg.on .modal{transform:scale(1)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility .2s;padding:16px}
+.modal-bg.on{opacity:1;visibility:visible;pointer-events:auto}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;width:min(100%,380px);max-height:calc(100dvh - 32px);overflow:auto;text-align:center;transform:scale(.92) translateY(8px);transition:transform .2s;box-shadow:0 24px 70px rgba(0,0,0,.44)}
+.modal-bg.on .modal{transform:scale(1) translateY(0)}
 .modal h3{font-size:16px;margin-bottom:8px}
 .modal p{color:var(--text2);font-size:13px;margin-bottom:16px}
 .modal-btns{display:flex;gap:6px}
 .modal-btns .btn{flex:1}
+.changelog-list{display:flex;flex-direction:column;gap:8px;margin:14px 0;text-align:left}
+.changelog-item{display:flex;gap:9px;padding:9px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text2);line-height:1.35}
+.changelog-bullet{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-dim);margin-top:5px;flex-shrink:0}
+.changelog-meta{display:flex;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:5px;background:var(--bg);font-size:12px;color:var(--text2);margin-top:8px}
 .promo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
 .promo-ch{background:var(--bg3);border:1px solid var(--border);border-radius:4px;aspect-ratio:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:6px;transition:all .15s}
 .promo-ch:hover{border-color:var(--accent);background:var(--accent-dim);transform:translateY(-2px)}
@@ -405,18 +421,31 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
-  main{flex-direction:column;align-items:center;padding:8px}
+  main{flex-direction:column;align-items:center;justify-content:flex-start;padding:8px}
   .col-board{width:min(100%,500px)}
   .col-side{width:min(100%,500px);max-height:none}
-  :root{--board-sz:min(500px,calc(100vw - 16px))}
+  :root{--board-sz:min(500px,calc(100vw - 16px),max(260px,calc(100dvh - 190px)))}
+  .lobby{padding:18px;max-width:100%}
 }
 @media(max-width:500px){
   .hdr{padding:0 10px;height:42px}
   .hdr-logo{font-size:13px}
   .hdr-btn span{display:none}
   .menu-head{height:42px}
+  main{padding:8px 16px;width:100vw;max-width:100vw}
+  .lobby{width:100%;max-width:360px;padding:18px}
   .timer{font-size:15px;padding:2px 8px;min-width:60px}
   .pbar-name{max-width:80px;font-size:12px}
+  .hdr-right{display:none}
+  .hdr-btn{padding:4px 8px;min-width:30px;justify-content:center}
+  .tc-grid{grid-template-columns:1fr}
+  #tc-custom-grid{grid-template-columns:1fr!important}
+  .tc-custom{flex-direction:column;align-items:stretch}
+  #name-grp-double > div{flex-direction:column;gap:8px!important}
+  .hc-row,.color-row,.ranked-actions,.modal-btns{flex-direction:column}
+  .ranked-stats{grid-template-columns:repeat(2,1fr)}
+  .server-banner-inner{gap:8px}
+  .changelog-meta{flex-direction:column}
 }
 </style>
 </head>
@@ -497,66 +526,96 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
 <main>
   <!-- ── LOBBY ── -->
   <div id="lobby" class="lobby">
-    <h2 id="screen-title">Local</h2>
-    <div id="screen-kicker" class="screen-kicker">Pass-and-play on this screen</div>
-    <div id="server-banner" class="server-banner">
-      <span id="server-banner-text">Checking online services...</span>
-      <button id="update-download" class="btn sec" type="button" style="display:none">Download latest</button>
+    <div class="screen-head">
+      <div>
+        <h2 id="screen-title">Local</h2>
+        <div id="screen-kicker" class="screen-kicker">Pass-and-play on this screen</div>
+      </div>
+      <button id="screen-help" class="icon-btn screen-help" type="button" title="Board features">
+        <svg viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+      </button>
     </div>
-
-    <!-- Name inputs, dynamically shown based on mode -->
-    <div id="setup-options">
-    <div id="name-grp-single" class="inp-grp" style="display:none">
-      <label>Your Name</label>
-      <input type="text" id="my-name" value="Player" maxlength="20">
-      <div id="my-name-display" class="playing-banner" style="display:none"></div>
-    </div>
-    <div id="name-grp-double" class="inp-grp">
-      <div style="display:flex;gap:10px">
-        <div style="flex:1">
-          <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;display:block">White Player</label>
-          <input type="text" id="local-w-name" value="White" maxlength="20" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);font-size:13px">
-        </div>
-        <div style="flex:1">
-          <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;display:block">Black Player</label>
-          <input type="text" id="local-b-name" value="Black" maxlength="20" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);font-size:13px">
+    <div id="server-banner" class="server-banner" role="status" aria-live="polite">
+      <div class="server-banner-inner">
+        <div id="server-banner-icon" class="server-banner-icon">!</div>
+        <div class="server-banner-copy">
+          <div id="server-banner-title" class="server-banner-title">Online service</div>
+          <div id="server-banner-text">Checking online services...</div>
+          <div class="server-banner-actions">
+            <button id="update-changelog" class="btn sec" type="button" style="display:none">View changelog</button>
+            <button id="update-download" class="btn sec" type="button" style="display:none">Download latest</button>
+            <button id="server-retry" class="btn sec" type="button" style="display:none">Retry connection</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Time Control Selection -->
-    <div class="tc-label">Time Control</div>
-    <div class="tc-cat">Bullet</div>
-    <div class="tc-grid">
-      <div class="tc-btn" data-tc="60|0">1+0<small>Bullet</small></div>
-      <div class="tc-btn" data-tc="60|1">1+1<small>Bullet</small></div>
-      <div class="tc-btn" data-tc="120|1">2+1<small>Bullet</small></div>
-      <div class="tc-btn" data-tc="180|0">3+0<small>Blitz</small></div>
-    </div>
-    <div class="tc-cat">Blitz</div>
-    <div class="tc-grid">
-      <div class="tc-btn" data-tc="180|2">3+2<small>Blitz</small></div>
-      <div class="tc-btn on" data-tc="300|0">5+0<small>Blitz</small></div>
-      <div class="tc-btn" data-tc="300|3">5+3<small>Blitz</small></div>
-      <div class="tc-btn" data-tc="300|5">5+5<small>Blitz</small></div>
-    </div>
-    <div class="tc-cat">Rapid</div>
-    <div class="tc-grid">
-      <div class="tc-btn" data-tc="600|0">10+0<small>Rapid</small></div>
-      <div class="tc-btn" data-tc="600|5">10+5<small>Rapid</small></div>
-      <div class="tc-btn" data-tc="900|10">15+10<small>Rapid</small></div>
-      <div class="tc-btn" data-tc="1800|0">30+0<small>Rapid</small></div>
-    </div>
-    <div id="tc-custom-cat" class="tc-cat">Custom / No Timer</div>
-    <div id="tc-custom-grid" class="tc-grid" style="grid-template-columns:1fr 1fr">
-      <div class="tc-btn" data-tc="custom">Custom<small>Set below</small></div>
-      <div class="tc-btn" data-tc="0|0">∞<small>No timer</small></div>
-    </div>
-    <div id="tc-custom-row" class="tc-custom" style="display:none">
-      <div class="inp-grp"><label>Minutes</label><input type="number" id="tc-min" value="10" min="0" max="180" step="1"></div>
-      <div class="inp-grp"><label>Seconds</label><input type="number" id="tc-sec" value="0" min="0" max="59" step="1"></div>
-      <div class="inp-grp"><label>Increment</label><input type="number" id="tc-inc" value="0" min="0" max="60" step="1"></div>
-    </div>
+    <!-- Name inputs, dynamically shown based on mode -->
+    <div id="setup-options" class="setup-grid">
+      <section class="setup-card player-card">
+        <div class="setup-card-title">Players</div>
+        <div id="name-grp-single" class="inp-grp" style="display:none">
+          <label>Your Name</label>
+          <input type="text" id="my-name" value="Player" maxlength="20">
+          <div id="my-name-display" class="playing-banner" style="display:none"></div>
+        </div>
+        <div id="name-grp-double" class="inp-grp">
+          <div class="local-name-grid">
+            <div>
+              <label>White Player</label>
+              <input type="text" id="local-w-name" value="White" maxlength="20">
+            </div>
+            <div>
+              <label>Black Player</label>
+              <input type="text" id="local-b-name" value="Black" maxlength="20">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Time Control Selection -->
+      <section class="setup-card time-card">
+        <div class="setup-card-title">Time Control</div>
+        <div class="tc-section">
+          <div class="tc-cat">Bullet</div>
+          <div class="tc-grid">
+            <div class="tc-btn" data-tc="60|0">1+0<small>Bullet</small></div>
+            <div class="tc-btn" data-tc="60|1">1+1<small>Bullet</small></div>
+            <div class="tc-btn" data-tc="120|1">2+1<small>Bullet</small></div>
+            <div class="tc-btn" data-tc="180|0">3+0<small>Blitz</small></div>
+          </div>
+        </div>
+        <div class="tc-section">
+          <div class="tc-cat">Blitz</div>
+          <div class="tc-grid">
+            <div class="tc-btn" data-tc="180|2">3+2<small>Blitz</small></div>
+            <div class="tc-btn on" data-tc="300|0">5+0<small>Blitz</small></div>
+            <div class="tc-btn" data-tc="300|3">5+3<small>Blitz</small></div>
+            <div class="tc-btn" data-tc="300|5">5+5<small>Blitz</small></div>
+          </div>
+        </div>
+        <div class="tc-section">
+          <div class="tc-cat">Rapid</div>
+          <div class="tc-grid">
+            <div class="tc-btn" data-tc="600|0">10+0<small>Rapid</small></div>
+            <div class="tc-btn" data-tc="600|5">10+5<small>Rapid</small></div>
+            <div class="tc-btn" data-tc="900|10">15+10<small>Rapid</small></div>
+            <div class="tc-btn" data-tc="1800|0">30+0<small>Rapid</small></div>
+          </div>
+        </div>
+        <div class="tc-section">
+          <div id="tc-custom-cat" class="tc-cat">Custom / No Timer</div>
+          <div id="tc-custom-grid" class="tc-grid tc-grid-split">
+            <div class="tc-btn" data-tc="custom">Custom<small>Set below</small></div>
+            <div class="tc-btn" data-tc="0|0">∞<small>No timer</small></div>
+          </div>
+          <div id="tc-custom-row" class="tc-custom" style="display:none">
+            <div class="inp-grp"><label>Minutes</label><input type="number" id="tc-min" value="10" min="0" max="180" step="1"></div>
+            <div class="inp-grp"><label>Seconds</label><input type="number" id="tc-sec" value="0" min="0" max="59" step="1"></div>
+            <div class="inp-grp"><label>Increment</label><input type="number" id="tc-inc" value="0" min="0" max="60" step="1"></div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- Local options -->
@@ -624,8 +683,8 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
     <div id="sect-ranked" class="lobby-sect">
       <div id="ranked-matchmaking-card" class="ranked-card" style="display:none">
         <div class="ranked-title">Play Ranked</div>
-        <button id="btn-create-ranked" class="btn" style="margin-top:12px" data-online-only>Create Ranked Game</button>
-        <button id="btn-show-rooms-ranked" class="btn sec" style="margin-top:12px" data-online-only>Show Ranked Challenges</button>
+        <button id="btn-create-ranked" class="btn" style="margin-top:12px" data-online-only data-service-only>Create Ranked Game</button>
+        <button id="btn-show-rooms-ranked" class="btn sec" style="margin-top:12px" data-online-only data-service-only>Show Ranked Challenges</button>
       </div>
 
       <div id="ranked-matchmaking-locked-card" class="ranked-card">
@@ -644,8 +703,8 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
           <input type="text" id="ranked-username" placeholder="Choose username" maxlength="24" autocomplete="nickname" style="display:none">
         </div>
         <div class="ranked-actions">
-        <button id="ranked-sign-in" class="btn" data-online-only>Sign In</button>
-        <button id="ranked-sign-up" class="btn sec" data-online-only>Create</button>
+        <button id="ranked-sign-in" class="btn" data-online-only data-service-only>Sign In</button>
+        <button id="ranked-sign-up" class="btn sec" data-online-only data-service-only>Create</button>
         </div>
         <div id="ranked-auth-msg" class="ranked-msg">Create an account or sign in to use ranked features.</div>
       </div>
@@ -658,7 +717,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
             <div id="ranked-avatar-fallback" class="ranked-avatar">?</div>
             <div style="min-width:0">
               <div id="ranked-display" class="ranked-name">Player</div>
-              <div class="ranked-meta">Public player name</div>
+              <div class="ranked-meta">Ranked username</div>
             </div>
           </div>
           <div id="ranked-rating" class="ranked-rating">1200</div>
@@ -676,11 +735,11 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
           <input type="file" id="ranked-avatar-file" accept="image/png,image/jpeg,image/webp">
         </div>
         <div class="ranked-actions">
-          <button id="ranked-save-profile" class="btn" data-online-only>Save Profile</button>
+          <button id="ranked-save-profile" class="btn" data-online-only data-service-only>Save Profile</button>
           <button id="ranked-sign-out" class="btn sec">Sign Out</button>
         </div>
         <div style="margin-top:8px">
-          <button id="ranked-delete-account" class="btn danger" style="font-size:12px;padding:8px" data-online-only>Delete Account</button>
+          <button id="ranked-delete-account" class="btn danger" style="font-size:12px;padding:8px" data-online-only data-service-only>Delete Account</button>
         </div>
         <div id="ranked-profile-msg" class="ranked-msg">Manage your profile and ranked identity.</div>
       </div>
@@ -709,7 +768,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
     <div class="screen-kicker">Ranked standings and stats</div>
     <div class="ranked-card">
       <div id="ranked-leaderboard"></div>
-      <button id="ranked-refresh" class="btn sec" style="margin-top:8px" data-online-only>Refresh Leaderboard</button>
+      <button id="ranked-refresh" class="btn sec" style="margin-top:8px" data-online-only data-service-only>Refresh Leaderboard</button>
     </div>
   </div>
 
@@ -763,6 +822,21 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
           <div class="tab" data-t="t-settings">Settings</div>
         </div>
         <div id="t-moves" class="tab-bd on">
+          <div class="history-tools">
+            <button id="btn-history-back" class="g-btn" title="Back one move">
+              <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6L11 18zm1-6 8.5 6V6L12 12z"/></svg>
+              Back
+            </button>
+            <button id="btn-history-forward" class="g-btn" title="Forward one move">
+              <svg viewBox="0 0 24 24"><path d="m4 18 8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+              Next
+            </button>
+            <button id="btn-history-live" class="g-btn primary" title="Return to current position">
+              <svg viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 0 1-8.66 3.42l-1.42 1.42A7 7 0 1 0 12 6z"/></svg>
+              Live
+            </button>
+          </div>
+          <div id="history-status" class="history-status">Current position</div>
           <div id="mv-list" class="mv-grid"></div>
           <div class="g-acts">
             <button id="btn-draw" class="g-btn" title="Offer Draw">
@@ -865,6 +939,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
             <div style="border-top:1px solid var(--border);padding-top:10px;font-size:11px;color:var(--text3)">
               <strong>Chess</strong> — P2P via WebRTC
             </div>
+            <button id="btn-board-help" class="btn sec" type="button">Board Features & Shortcuts</button>
           </div>
         </div>
       </div>
@@ -913,6 +988,20 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
       <button id="bug-report-submit" class="btn">Submit Report</button>
       <button id="bug-report-download" class="btn sec">Download Copy</button>
       <button id="bug-report-close" class="btn sec">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Changelog Modal -->
+<div id="m-changelog" class="modal-bg">
+  <div class="modal" style="max-width:520px;text-align:left">
+    <h3 id="changelog-title" style="text-align:center">Open Chess Update</h3>
+    <p id="changelog-subtitle" style="text-align:center">Review what changed before downloading.</p>
+    <div id="changelog-meta" class="changelog-meta"></div>
+    <div id="changelog-list" class="changelog-list"></div>
+    <div class="modal-btns">
+      <button id="changelog-download" class="btn">Download latest</button>
+      <button id="changelog-close" class="btn sec">Close</button>
     </div>
   </div>
 </div>
@@ -1245,13 +1334,13 @@ class MockConnection {
 const Peer = MockPeer;
 
 // ─── SUPABASE CONFIG ───
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.3';
 const HOTFIX_PATCH_NOTES = [
-  'Fixed ranked rematch settings so colour and handicaps cannot be changed.',
-  'Fixed premove selection so only legal premove destinations are shown and accepted.',
-  'Reduced notation arrow overdraw and refined captured-piece glow.',
-  'Added in-game bug reporting, version display, and cleaner player-name layout.',
-  'Removed extra draw/resignation popups when the board result animation already plays.'
+  'Upgraded mobile and tablet layouts with calmer setup cards, less dense controls, and safer spacing.',
+  'Added move-history review: click any move to inspect that position without disrupting live online games.',
+  'Added a Back control: local games undo the previous move, online and ranked games step through history safely.',
+  'Added keyboard shortcuts for board flipping, history navigation, latest position, settings, and help.',
+  'Added a board-features help dialog covering premoves, arrows, move review, and shortcuts.'
 ];
 const APP_DOWNLOAD_URL = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
 const SUPABASE_URL = 'https://pwnblygocbbizpbscqig.supabase.co';
@@ -1670,30 +1759,77 @@ const updateMenuAccount = () => {
   }
 };
 
-const patchNotesText = (notes) => {
+const patchNotesList = (notes) => {
   const source = String(notes || '').trim();
-  if (source && !/^version\s+1\.0\.0\b/i.test(source)) return source;
-  return HOTFIX_PATCH_NOTES.map(item => `- ${item}`).join('\n');
+  const normalized = source && !/^version\s+1\.0\.0\b/i.test(source)
+    ? source
+    : HOTFIX_PATCH_NOTES.map(item => `- ${item}`).join('\n');
+  return normalized
+    .split(/\r?\n/)
+    .map(line => line.trim().replace(/^[-*•]\s*/, ''))
+    .filter(Boolean);
 };
 
-const updateRequiredDialogBody = () => {
-  const latest = appVersionInfo?.latest_version || appVersionInfo?.minimum_supported_version || 'latest';
-  const notes = patchNotesText(appVersionInfo?.release_notes);
-  return `An app update is required to access online features.\n\nYour version: v${APP_VERSION}\nLatest version: v${latest}\n\nPatch list:\n${notes}`;
+const renderChangelog = () => {
+  const latest = appVersionInfo?.latest_version || appVersionInfo?.minimum_supported_version || APP_VERSION;
+  const minimum = appVersionInfo?.minimum_supported_version || latest;
+  const title = updateRequired ? 'Update Required' : 'Open Chess Changelog';
+  $('changelog-title').textContent = title;
+  $('changelog-subtitle').textContent = updateRequired
+    ? 'Online features are paused until this client is updated.'
+    : 'Recent client changes and quality fixes.';
+
+  const meta = $('changelog-meta');
+  meta.innerHTML = '';
+  [
+    ['Current', `v${APP_VERSION}`],
+    ['Latest', `v${latest}`],
+    ['Minimum', `v${minimum}`]
+  ].forEach(([label, value]) => {
+    const item = document.createElement('div');
+    const strong = document.createElement('strong');
+    strong.textContent = `${label}: `;
+    item.appendChild(strong);
+    item.appendChild(document.createTextNode(value));
+    meta.appendChild(item);
+  });
+
+  const list = $('changelog-list');
+  list.innerHTML = '';
+  patchNotesList(appVersionInfo?.release_notes).forEach(note => {
+    const row = document.createElement('div');
+    row.className = 'changelog-item';
+    const dot = document.createElement('span');
+    dot.className = 'changelog-bullet';
+    const text = document.createElement('div');
+    text.textContent = note;
+    row.appendChild(dot);
+    row.appendChild(text);
+    list.appendChild(row);
+  });
+};
+
+const openChangelog = () => {
+  renderChangelog();
+  $('m-changelog').classList.add('on');
+};
+
+const closeChangelog = () => {
+  $('m-changelog').classList.remove('on');
 };
 
 const setAppMode = (nextMode, closeMenu=true) => {
   if (gameIsActive()) return;
-  if (nextMode === 'account' || nextMode === 'ranked' || nextMode === 'online') {
+  if (nextMode === 'online') {
+    if (!requireNetworkOnline('Your browser is offline. Online challenges need a network connection.')) return;
+  }
+  if (nextMode === 'account' || nextMode === 'ranked') {
     if (!serverOnline) {
-      dlg('Connection Offline', 'The online service is currently unavailable. Online, ranked, and account features are paused.');
+      dlg('Connection Offline', 'The account service is currently unavailable. Ranked and account features are paused.');
       return;
     }
     if (updateRequired) {
-      dlg('Update Required', updateRequiredDialogBody(), 'Download', 'Cancel')
-        .then(res => {
-          if (res) downloadLatestHtml();
-        });
+      openChangelog();
       return;
     }
   }
@@ -1757,6 +1893,18 @@ const rankedMsg = (id, text, kind='') => {
 
 const onlineFeaturesPaused = () => !serverOnline || updateRequired;
 
+const requireNetworkOnline = (message='Your browser is offline. Check your connection and try again.') => {
+  if (updateRequired) {
+    openChangelog();
+    return false;
+  }
+  if (navigator.onLine === false) {
+    dlg('Connection Offline', message);
+    return false;
+  }
+  return true;
+};
+
 const versionParts = (value) => String(value || '0')
   .split(/[^\d]+/)
   .filter(Boolean)
@@ -1778,20 +1926,38 @@ const versionUpdateMessage = () => {
 };
 
 const applyOnlineFeatureGate = () => {
+  const browserOffline = navigator.onLine === false;
+  document.body.classList.toggle('browser-offline', browserOffline);
   document.body.classList.toggle('server-offline', !serverOnline);
   document.body.classList.toggle('update-required', serverOnline && updateRequired);
-  const message = !serverOnline
-    ? 'Connection lost. Online games, ranked, leaderboard, and account editing are paused until service returns.'
+  const message = browserOffline
+    ? 'Your browser is offline. Online challenges, ranked, accounts, and leaderboard are paused until the connection returns.'
+    : !serverOnline
+      ? 'Account service is unavailable. Ranked, leaderboard, sign-in, and profile editing are paused; unranked online challenges can still work if your browser is online.'
     : updateRequired
       ? versionUpdateMessage()
       : '';
+  const title = browserOffline || !serverOnline
+    ? 'Connection offline'
+    : updateRequired
+      ? 'Update required'
+      : 'Online service';
   const bannerText = $('server-banner-text');
+  const bannerTitle = $('server-banner-title');
+  const bannerIcon = $('server-banner-icon');
   if (bannerText) bannerText.textContent = message;
+  if (bannerTitle) bannerTitle.textContent = title;
+  if (bannerIcon) bannerIcon.textContent = updateRequired ? 'v' : '!';
+  show('update-changelog', serverOnline && updateRequired);
   show('update-download', serverOnline && updateRequired);
+  show('server-retry', browserOffline || !serverOnline);
   document.querySelectorAll('[data-online-only]').forEach(el => {
-    el.disabled = onlineFeaturesPaused();
-    el.title = !serverOnline
-      ? 'Online service unavailable. Online features are paused.'
+    const blocked = browserOffline || updateRequired || (!serverOnline && el.hasAttribute('data-service-only'));
+    el.disabled = blocked;
+    el.title = browserOffline
+      ? 'Your browser is offline.'
+      : !serverOnline && el.hasAttribute('data-service-only')
+      ? 'Account service unavailable. Ranked and account features are paused.'
       : updateRequired
         ? 'Update required. Online features are paused.'
         : '';
@@ -1805,6 +1971,9 @@ const updateHeaderStatus = () => {
   if (!serverChecked) {
     dot.className = 'dot wait';
     txt.textContent = 'Checking';
+  } else if (navigator.onLine === false) {
+    dot.className = 'dot err';
+    txt.textContent = 'Offline';
   } else if (!serverOnline) {
     dot.className = 'dot err';
     txt.textContent = 'Offline';
@@ -1837,10 +2006,15 @@ const setServerOnline = async (online, message='') => {
     rankedMsg('ranked-auth-msg', message || 'Online service unavailable. Account features are paused.', 'err');
     rankedMsg('ranked-profile-msg', message || 'Online service unavailable. Profile editing is paused.', 'err');
     if (mode === 'multiplayer' && wasOnline) {
-      stopClock();
-      if (!serverOfflineGameNoticeShown) {
+      if (isRankedGame) {
+        stopClock();
+        if (!serverOfflineGameNoticeShown) {
+          serverOfflineGameNoticeShown = true;
+          addChat('System', 'Ranked service connection lost. The game is paused until ranked result tracking is available again.', 'sys');
+        }
+      } else if (!serverOfflineGameNoticeShown) {
         serverOfflineGameNoticeShown = true;
-        addChat('System', 'Online connection lost. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
+        addChat('System', 'Account service connection lost. This unranked game can continue while account features recover.', 'sys');
       }
     }
   } else if (serverWasOffline) {
@@ -1848,7 +2022,7 @@ const setServerOnline = async (online, message='') => {
     serverOfflineGameNoticeShown = false;
     rankedMsg('ranked-auth-msg', 'Online connection restored.', 'ok');
     if (mode === 'multiplayer' && conn?.open && !opponentDisconnected) {
-      addChat('System', 'Online connection restored. Online actions are available again.', 'sys');
+      addChat('System', 'Account service connection restored.', 'sys');
       if (timerEnabled && !gameOver && !isReconnecting) startClock();
     }
     if (rankedUser) await validateRankedSession({ silent: true });
@@ -1879,10 +2053,7 @@ const setUpdateRequired = (required, info=null) => {
   
   if (isInitialLoad) {
     if (required) {
-      dlg('Update Required', updateRequiredDialogBody(), 'Download', 'Cancel')
-        .then(res => {
-          if (res) downloadLatestHtml();
-        });
+      openChangelog();
     }
     isInitialLoad = false;
   }
@@ -1931,9 +2102,7 @@ const checkServerConnection = async () => {
 const requireServerOnline = (message='This online feature is unavailable while the online service is disconnected.') => {
   if (serverOnline && !updateRequired) return true;
   if (updateRequired) {
-    dlg('Update Required', updateRequiredDialogBody(), 'Download', 'Cancel').then(res => {
-      if (res) downloadLatestHtml();
-    });
+    openChangelog();
     return false;
   }
   dlg('Connection Offline', message);
@@ -2351,6 +2520,25 @@ window.addEventListener('storage', (event) => {
   } catch(e) {}
 });
 
+window.addEventListener('offline', () => {
+  applyOnlineFeatureGate();
+  updateHeaderStatus();
+  if (mode === 'multiplayer' && !gameOver) {
+    stopClock();
+    addChat('System', 'Browser went offline. Game actions are paused until the connection returns.', 'sys');
+  }
+});
+
+window.addEventListener('online', () => {
+  applyOnlineFeatureGate();
+  updateHeaderStatus();
+  checkServerConnection();
+  if (mode === 'multiplayer' && conn?.open && !gameOver && !isReconnecting) {
+    addChat('System', 'Browser connection restored.', 'sys');
+    if (timerEnabled) startClock();
+  }
+});
+
 const renderRankedAuth = () => {
   const signedIn = !!rankedUser;
   show('ranked-auth', !signedIn);
@@ -2482,14 +2670,20 @@ const rankedSignUp = async () => {
     rankedMsg('ranked-auth-msg', 'Username must be 3-24 letters, numbers, or underscores.', 'err');
     return;
   }
+  const email = $('ranked-email').value.trim();
+  const password = $('ranked-password').value;
+  if (!email || !password) {
+    rankedMsg('ranked-auth-msg', 'Enter your email and password.', 'err');
+    return;
+  }
   const emailRedirectTo = getAuthRedirectUrl();
   rankedMsg('ranked-auth-msg', 'Creating account...');
 
   let data, error;
   try {
     ({ data, error } = await sb.auth.signUp({
-      email: $('ranked-email').value.trim(),
-      password: $('ranked-password').value,
+      email,
+      password,
       options: {
         ...(emailRedirectTo ? { emailRedirectTo } : {}),
         data: { username },
@@ -3206,7 +3400,6 @@ let boardArrows = [];
 let boardHighlights = new Set();
 let arrowColor = '#81b64c'; // Default Chess.com green
 let rightClickStartSq = null;
-let isRightClickDragging = false;
 
 const getSquareCenter = (sq) => {
   const sqEl = document.querySelector(`.sq[data-sq="${sq}"]`);
@@ -3350,7 +3543,6 @@ const premoveDestsFor = (sq) => {
 
 const onRightClickUp = (e) => {
   window.removeEventListener('pointerup', onRightClickUp);
-  isRightClickDragging = false;
   if (e.button === 2 && rightClickStartSq) {
     const endSq = getSquareFromCoords(e.clientX, e.clientY);
     if (endSq) {
@@ -3402,7 +3594,7 @@ const handlePremoveExecution = async () => {
     if (isRankedGame) touchRankedLiveGame();
     renderBoard();
     renderTimers();
-    updateMoveList();
+    updateMoves();
   } else {
     renderBoard();
   }
@@ -3430,7 +3622,6 @@ const onSqDown = (e) => {
   // Handle right-click for notation arrows/circles
   if (e.button === 2) {
     rightClickStartSq = sq;
-    isRightClickDragging = true;
     window.addEventListener('pointerup', onRightClickUp);
     return;
   }
@@ -3680,10 +3871,11 @@ $('btn-flip').onclick = () => { flipped = !flipped; renderBoard(); renderTimers(
 const leaveActiveGame = async () => {
   if (!gameIsActive()) return;
   const aborting = isRankedGame && !gameOver && localRankedCanAbort();
+  const servicePauseAffectsGame = updateRequired || (isRankedGame && !serverOnline);
   const body = gameOver
     ? 'Leave the game review and return to the lobby?'
-    : onlineFeaturesPaused() && mode === 'multiplayer'
-      ? 'Online services are currently unavailable. Leaving now returns to the lobby and this in-progress game cannot be resumed from this browser session if services become available again. Leave anyway?'
+    : servicePauseAffectsGame && mode === 'multiplayer'
+      ? 'Online services required by this game are currently unavailable. Leaving now returns to the lobby and this in-progress game cannot be resumed from this browser session if services become available again. Leave anyway?'
       : aborting
       ? 'Abort this ranked game before your first move and return to the lobby? No rating change will be applied.'
       : isRankedGame
@@ -3851,7 +4043,6 @@ const applyPieceHandicap = (code) => {
   // code like 'wQ', 'bR', 'wN' etc.
   const color = code[0]; // w or b
   const piece = code[1].toLowerCase(); // q, r, n
-  const fen = chess.fen();
   // Load current board and find the piece to remove
   const board = chess.board();
   let targetSq = null;
@@ -3908,10 +4099,13 @@ const setStatus = (cls, txt) => {
 const RECONNECT_GRACE_MS = 15000;
 const RECONNECT_RETRY_MS = 2500;
 
-const onlineReady = () => mode !== 'multiplayer' || (!onlineFeaturesPaused() && conn && conn.open && !isReconnecting && !opponentDisconnected);
+const transportReady = () => !!(conn && conn.open && !isReconnecting && !opponentDisconnected);
+const onlineReady = () => mode !== 'multiplayer' || (navigator.onLine !== false && transportReady());
+const rematchBlockedByService = () => updateRequired || (isRankedGame && !serverOnline);
+const followupOnlineReady = () => mode === 'multiplayer' && navigator.onLine !== false && transportReady() && !rematchBlockedByService();
 
 const sendPeer = (payload) => {
-  if (!conn || !conn.open || isReconnecting || opponentDisconnected) return false;
+  if (!conn || !conn.open || navigator.onLine === false || isReconnecting || opponentDisconnected) return false;
   try {
     return conn.send(payload) !== false;
   } catch (e) {
@@ -3970,6 +4164,8 @@ const updateRematchForConnection = () => {
   show('btn-rematch', true);
   if (opponentDisconnected || !conn || !conn.open) {
     blockRematchButton('Rematch unavailable: opponent disconnected.');
+  } else if (rematchBlockedByService()) {
+    blockRematchButton(updateRequired ? 'Update required before starting another online game.' : 'Ranked service unavailable: ranked rematch is paused.');
   } else if (rematchBlockedReason) {
     resetRematchButton();
   }
@@ -3999,8 +4195,12 @@ const hasOpenMatchmakingRoom = () => !!(roomId && isHost && !conn && matchmaking
 
 const setMatchmakingControlsLocked = (locked) => {
   document.querySelectorAll('#setup-options input, #setup-options select').forEach(el => {
-    el.disabled = false;
-    el.title = '';
+    el.disabled = locked;
+    el.title = locked ? 'Close the open room before changing setup options.' : '';
+  });
+  document.querySelectorAll('#setup-options .tc-btn, #setup-options .c-btn, #setup-options details').forEach(el => {
+    el.classList.toggle('is-locked', locked);
+    el.title = locked ? 'Close the open room before changing setup options.' : '';
   });
 };
 
@@ -4286,6 +4486,12 @@ $('bug-report-close').onclick = closeBugReport;
 $('m-bug-report').onclick = (e) => {
   if (e.target === $('m-bug-report')) closeBugReport();
 };
+$('update-changelog').onclick = openChangelog;
+$('changelog-close').onclick = closeChangelog;
+$('changelog-download').onclick = downloadLatestHtml;
+$('m-changelog').onclick = (e) => {
+  if (e.target === $('m-changelog')) closeChangelog();
+};
 
 $('ranked-sign-in').onclick = rankedSignIn;
 $('ranked-sign-up').onclick = rankedSignUp;
@@ -4294,6 +4500,7 @@ $('ranked-sign-out').onclick = rankedSignOut;
 $('ranked-delete-account').onclick = rankedDeleteAccount;
 $('ranked-refresh').onclick = loadRankedLeaderboard;
 if ($('update-download')) $('update-download').onclick = downloadLatestHtml;
+if ($('server-retry')) $('server-retry').onclick = checkServerConnection;
 $('ranked-avatar-file').onchange = async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -4398,6 +4605,43 @@ let activeRooms = {}; // roomId -> roomInfo
 let announceInterval = null;
 let lobbyPollInterval = null;
 
+const normalizeRoomPayload = (payload) => {
+  if (!payload || typeof payload !== 'object') return null;
+  const normalizedId = String(payload.roomId || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,12}$/.test(normalizedId)) return null;
+  const ranked = payload.ranked === true;
+  const status = payload.status === 'in_game' ? 'in_game' : 'open';
+  const timeControl = payload.timeControl && typeof payload.timeControl === 'object'
+    ? payload.timeControl
+    : {};
+  const base = Number.isFinite(Number(timeControl.base)) ? Math.max(0, Number(timeControl.base)) : 300;
+  const inc = Number.isFinite(Number(timeControl.inc)) ? Math.max(0, Number(timeControl.inc)) : 0;
+  const score = payload.score && typeof payload.score === 'object' ? payload.score : {};
+  const hc = payload.hc && typeof payload.hc === 'object' ? payload.hc : {};
+  const hostColor = ['w', 'b', 'random'].includes(payload.hostColor) ? payload.hostColor : 'random';
+  return {
+    type: 'announce_room',
+    roomId: normalizedId,
+    hostName: String(payload.hostName || 'Host').slice(0, 32),
+    hostColor,
+    status,
+    score: {
+      w: Number(score.w) || 0,
+      b: Number(score.b) || 0,
+      draws: Number(score.draws) || 0
+    },
+    timeControl: { base, inc },
+    hc: ranked ? null : {
+      wMul: Number(hc.wMul) || 1,
+      bMul: Number(hc.bMul) || 1,
+      piece: typeof hc.piece === 'string' ? hc.piece : 'none'
+    },
+    ranked,
+    hostRating: Number(payload.hostRating) || 1200,
+    hostAvatarUrl: typeof payload.hostAvatarUrl === 'string' ? payload.hostAvatarUrl : null
+  };
+};
+
 const initLobby = () => {
   if (lobbyWs) {
     try { lobbyWs.close(); } catch(e){}
@@ -4430,7 +4674,9 @@ const initLobby = () => {
             }
           }
           else if (payload.type === 'announce_room') {
-            activeRooms[payload.roomId] = payload;
+            const room = normalizeRoomPayload(payload);
+            if (!room) return;
+            activeRooms[room.roomId] = room;
             renderRoomsList();
           }
           else if (payload.type === 'remove_room') {
@@ -4633,7 +4879,7 @@ $('btn-start-local').onclick = () => {
 
 // ─── ONLINE: CREATE ───
 $('btn-create').onclick = () => {
-  if (!requireServerOnline('Online games are unavailable while the online service is disconnected.')) return;
+  if (!requireNetworkOnline('Your browser is offline. Online challenges need a network connection.')) return;
   if (hasOpenMatchmakingRoom()) {
     dlg('Room Already Open', 'Close your open room before starting another one.');
     return;
@@ -4809,7 +5055,10 @@ $('btn-close-open-room').onclick = () => {
 };
 
 const joinRoom = (code) => {
-  if (!requireServerOnline('Online games are unavailable while the online service is disconnected.')) return;
+  const room = activeRooms[String(code || '').trim().toUpperCase()];
+  if (room?.ranked) {
+    if (!requireServerOnline('Ranked games are unavailable while the account service is disconnected.')) return;
+  } else if (!requireNetworkOnline('Your browser is offline. Online challenges need a network connection.')) return;
   if (hasOpenMatchmakingRoom()) {
     dlg('Room Already Open', 'Close your open room before joining another challenge.');
     return;
@@ -5413,7 +5662,7 @@ const handleMsg = async (d) => {
       break;
     }
     case 'rematch_request': {
-      if (!onlineReady()) break;
+      if (!followupOnlineReady()) break;
       const ok = await dlg('Rematch Request', `${opponentName} requests a rematch. Do you want to configure settings?`, 'Configure', 'Decline');
       if (ok) {
         $('btn-rematch').click();
@@ -5423,7 +5672,7 @@ const handleMsg = async (d) => {
       break;
     }
     case 'rematch_offer': {
-      if (!onlineReady()) break;
+      if (!followupOnlineReady()) break;
       const offerHc = isRankedGame ? { wMul: 1, bMul: 1, piece: 'none' } : (d.hc || { wMul: 1, bMul: 1, piece: 'none' });
       let tcDesc = '';
       if (d.tc.base === 0) {
@@ -5484,7 +5733,7 @@ const handleMsg = async (d) => {
 // ─── ONLINE LOBBY POPUP & REAL-TIME SETTINGS & REMATCH FLOW ───
 
 $('btn-show-rooms').onclick = () => {
-  if (!requireServerOnline('Online challenges are unavailable while the online service is disconnected.')) return;
+  if (!requireNetworkOnline('Your browser is offline. Online challenges need a network connection.')) return;
   if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') {
     dlg('Room Already Open', 'Close your open ranked room before browsing online challenges.');
     return;
@@ -5536,7 +5785,9 @@ $('btn-close-rooms').onclick = () => {
 };
 
 $('btn-refresh-rooms').onclick = () => {
-  if (!requireServerOnline('Challenge refresh is unavailable while the online service is disconnected.')) return;
+  if (lobbyFilterMode === 'ranked') {
+    if (!requireServerOnline('Ranked challenge refresh is unavailable while the account service is disconnected.')) return;
+  } else if (!requireNetworkOnline('Your browser is offline. Online challenges need a network connection.')) return;
   if (lobbyWs && lobbyWs.readyState === WebSocket.OPEN) {
     sendLobbyMsg({ type: 'query_rooms' });
   } else {
@@ -5595,6 +5846,10 @@ $('btn-rematch').onclick = () => {
     blockRematchButton('Rematch unavailable: opponent disconnected.');
     return;
   }
+  if (rematchBlockedByService()) {
+    blockRematchButton(updateRequired ? 'Update required before starting another online game.' : 'Ranked service unavailable: ranked rematch is paused.');
+    return;
+  }
   if (isHost) {
     $('m-rematch').classList.add('on');
     show('rematch-color-block', !isRankedGame);
@@ -5611,9 +5866,9 @@ $('btn-rematch').onclick = () => {
 
 // Send rematch offer
 $('rematch-send').onclick = () => {
-  if (!onlineReady()) {
+  if (!followupOnlineReady()) {
     $('m-rematch').classList.remove('on');
-    blockRematchButton('Rematch unavailable: opponent disconnected.');
+    blockRematchButton(updateRequired ? 'Update required before starting another online game.' : 'Rematch unavailable right now.');
     return;
   }
   const colorChosen = isRankedGame ? 'random' : (document.querySelector('.rematch-c-btn.on')?.dataset.c || 'w');
