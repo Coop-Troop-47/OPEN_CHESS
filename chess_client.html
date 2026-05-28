@@ -45,6 +45,8 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 .hdr-btn svg{width:14px;height:14px;fill:currentColor}
 .hdr-btn.danger{color:var(--red);border-color:rgba(224,85,85,.35)}
 .hdr-btn.danger:hover{background:rgba(224,85,85,.12);color:#ff8585}
+.hdr-btn.report{color:var(--text2)}
+.hdr-btn.report:hover{color:var(--text)}
 .icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;transition:background .15s,color .15s}
 .icon-btn:hover{background:var(--bg4);color:var(--text)}
 .icon-btn svg{width:18px;height:18px;fill:currentColor}
@@ -85,11 +87,11 @@ body.ranked-lobby main #lobby, body.ranked-lobby main #ranked-leaderboard-panel{
 /* ── PLAYER BAR ── */
 .pbar{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;min-height:44px}
 .pbar.active{border-color:var(--accent);background:var(--accent-dim)}
-.pbar-left{display:flex;align-items:center;gap:8px;overflow:hidden}
+.pbar-left{display:flex;align-items:center;gap:8px;overflow:hidden;min-width:0;flex:1}
 .pbar-av{width:26px;height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
 .pbar-av.w{background:#fff;color:#222;border:1px solid #ddd}
 .pbar-av.b{background:#333;color:#eee;border:1px solid #555}
-.pbar-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.pbar-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:70px;max-width:220px;flex:0 1 auto}
 .pbar-caps{display:flex;align-items:center;gap:2px;margin-left:4px;flex-wrap:wrap}
 .cap-stack{position:relative;width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:-4px}
 .cap-piece{position:absolute;width:26px;height:26px;display:flex;align-items:center;justify-content:center}
@@ -98,7 +100,7 @@ body.ranked-lobby main #lobby, body.ranked-lobby main #ranked-leaderboard-panel{
 .cap-piece:nth-child(3){left:10px;z-index:2;opacity:.78}
 .cap-piece:nth-child(n+4){display:none}
 .pbar-caps svg{width:26px;height:26px;opacity:1}
-.cap-piece.black svg{filter:var(--piece-shadow) drop-shadow(0 0 1px rgba(255,255,255,.95)) drop-shadow(0 0 2px rgba(255,255,255,.72))}
+.cap-piece.black svg{filter:var(--piece-shadow) drop-shadow(0 0 .8px rgba(255,255,255,.55))}
 .cap-piece:nth-child(n+2) svg{opacity:.86}
 .pbar-adv{color:var(--green);font-weight:700;font-size:11px;margin-left:3px}
 .pbar-right{display:flex;align-items:center;gap:6px}
@@ -142,6 +144,7 @@ body.ranked-lobby main #lobby, body.ranked-lobby main #ranked-leaderboard-panel{
 .pc svg{width:88%;height:88%;filter:var(--piece-shadow);pointer-events:none;-webkit-user-drag:none;user-select:none}
 body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .ghost{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%) scale(1.08);filter:var(--ghost-shadow);display:none}
+.app-version{position:fixed;right:7px;bottom:5px;z-index:20;color:var(--text3);font-size:10px;font-weight:700;opacity:.55;pointer-events:none;font-variant-numeric:tabular-nums}
 
 /* ── SIDE PANEL ── */
 .panel{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column}
@@ -428,6 +431,10 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
       <svg viewBox="0 0 24 24"><path d="M10.09 15.59 11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
       <span>Leave</span>
     </button>
+    <button id="header-report" class="hdr-btn report" title="Report bug" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M20 8h-2.81a5.98 5.98 0 0 0-1.54-1.78L17 4.86 15.59 3.45l-1.82 1.82A6.31 6.31 0 0 0 12 5c-.62 0-1.22.09-1.77.27L8.41 3.45 7 4.86l1.35 1.36A5.98 5.98 0 0 0 6.81 8H4v2h2.09A6.7 6.7 0 0 0 6 11v1H4v2h2v1c0 .35.03.69.09 1H4v2h2.81A6.1 6.1 0 0 0 12 21a6.1 6.1 0 0 0 5.19-3H20v-2h-2.09c.06-.31.09-.65.09-1v-1h2v-2h-2v-1c0-.35-.03-.69-.09-1H20V8zm-4 7a4 4 0 0 1-8 0v-4a4 4 0 0 1 8 0v4zm-6-4h4v2h-4v-2zm0 3h4v2h-4v-2z"/></svg>
+      <span>Report</span>
+    </button>
     <div class="hdr-logo">
       <svg viewBox="0 0 24 24"><path d="M12 2c-1.66 0-3 1.34-3 3 0 .8.34 1.52.88 2.03C8.16 7.74 7 9.25 7 11c0 1.25.5 2.39 1.32 3.23C7.26 14.78 6 16.48 6 18.5V21h12v-2.5c0-2.02-1.26-3.72-2.32-4.27.82-.84 1.32-1.98 1.32-3.23 0-1.75-1.16-3.26-2.88-3.97.54-.51.88-1.23.88-2.03 0-1.66-1.34-3-3-3z"/></svg>
       <span id="app-title">Local Chess</span>
@@ -448,6 +455,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
     </div>
   </div>
 </header>
+<div id="app-version" class="app-version"></div>
 
 <div id="menu-backdrop" class="menu-backdrop"></div>
 <aside id="app-menu" class="app-menu" aria-label="App menu">
@@ -898,7 +906,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
         <label for="bug-report-steps">Steps or extra notes</label>
         <textarea id="bug-report-steps" placeholder="Optional: list steps to reproduce, room type, account state, or opponent behaviour."></textarea>
       </div>
-      <div class="bug-report-note">This sends the report to Supabase with app diagnostics, current game state, and browser details. Download a local copy if the server is unavailable.</div>
+      <div class="bug-report-note">This sends the report with app diagnostics, current game state, and browser details. Download a local copy if the service is unavailable.</div>
       <div id="bug-report-status" class="bug-report-status"></div>
     </div>
     <div class="modal-btns">
@@ -949,11 +957,13 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
   <div class="modal" style="max-width: 420px; text-align: left; padding: 20px;">
     <h3 style="text-align: center; margin-bottom: 12px;">Rematch Settings</h3>
     
+    <div id="rematch-color-block">
     <label style="font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; margin-bottom:4px; display:block">Host Color</label>
     <div class="color-row" style="margin-bottom: 12px;">
       <div id="rematch-c-w" class="rematch-c-btn c-btn on" data-c="w">⬜ White</div>
       <div id="rematch-c-r" class="rematch-c-btn c-btn" data-c="random">🎲 Random</div>
       <div id="rematch-c-b" class="rematch-c-btn c-btn" data-c="b">⬛ Black</div>
+    </div>
     </div>
 
     <label style="font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; margin-bottom:4px; display:block">Time Control</label>
@@ -973,7 +983,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
       <option value="0|0">∞ No Timer</option>
     </select>
 
-    <details style="margin-bottom:16px;">
+    <details id="rematch-handicap-block" style="margin-bottom:16px;">
       <summary style="cursor:pointer; color:var(--accent); font-size:12px; font-weight:600; margin-bottom:8px;">Handicaps</summary>
       <div class="hc-row" style="margin-bottom: 8px;">
         <div class="inp-grp" style="flex:1;">
@@ -1235,7 +1245,14 @@ class MockConnection {
 const Peer = MockPeer;
 
 // ─── SUPABASE CONFIG ───
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
+const HOTFIX_PATCH_NOTES = [
+  'Fixed ranked rematch settings so colour and handicaps cannot be changed.',
+  'Fixed premove selection so only legal premove destinations are shown and accepted.',
+  'Reduced notation arrow overdraw and refined captured-piece glow.',
+  'Added in-game bug reporting, version display, and cleaner player-name layout.',
+  'Removed extra draw/resignation popups when the board result animation already plays.'
+];
 const APP_DOWNLOAD_URL = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
 const SUPABASE_URL = 'https://pwnblygocbbizpbscqig.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3bmJseWdvY2JiaXpwYnNjcWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE0MzIsImV4cCI6MjA5NTM3NzQzMn0.HbtM3SjKLaVpUDKHB44NxOBQbRH5cLfwwngEABPVAco';
@@ -1511,7 +1528,7 @@ const submitBugReport = async () => {
     return;
   }
   if (!sb || !serverOnline) {
-    setBugReportStatus('Server unavailable. Download a copy and submit it later.', 'err');
+    setBugReportStatus('Online service unavailable. Download a copy and submit it later.', 'err');
     return;
   }
   $('bug-report-submit').disabled = true;
@@ -1611,7 +1628,7 @@ const SCREEN_COPY = {
   local: { title: 'Local', kicker: 'Pass-and-play on this screen' },
   online: { title: 'Online', kicker: 'Create or join a peer-to-peer game' },
   ranked: { title: 'Ranked', kicker: 'Profiles, ratings, and leaderboard' },
-  account: { title: 'Account', kicker: 'Sign in and manage your chess profile' }
+  account: { title: 'Account', kicker: 'Sign in and manage your profile' }
 };
 
 const gameIsActive = () => $('game-wrap')?.classList.contains('on');
@@ -1621,6 +1638,7 @@ const syncHeaderMode = () => {
   document.body.classList.toggle('game-active', inGame);
   show('menu-open', !inGame);
   show('header-leave', inGame);
+  show('header-report', inGame);
   if (inGame) setMenuOpen(false);
 };
 
@@ -1652,17 +1670,27 @@ const updateMenuAccount = () => {
   }
 };
 
+const patchNotesText = (notes) => {
+  const source = String(notes || '').trim();
+  if (source && !/^version\s+1\.0\.0\b/i.test(source)) return source;
+  return HOTFIX_PATCH_NOTES.map(item => `- ${item}`).join('\n');
+};
+
+const updateRequiredDialogBody = () => {
+  const latest = appVersionInfo?.latest_version || appVersionInfo?.minimum_supported_version || 'latest';
+  const notes = patchNotesText(appVersionInfo?.release_notes);
+  return `An app update is required to access online features.\n\nYour version: v${APP_VERSION}\nLatest version: v${latest}\n\nPatch list:\n${notes}`;
+};
+
 const setAppMode = (nextMode, closeMenu=true) => {
   if (gameIsActive()) return;
   if (nextMode === 'account' || nextMode === 'ranked' || nextMode === 'online') {
     if (!serverOnline) {
-      dlg('Server Offline', 'The server is currently offline. Online, ranked, and account features are unavailable.');
+      dlg('Connection Offline', 'The online service is currently unavailable. Online, ranked, and account features are paused.');
       return;
     }
     if (updateRequired) {
-      const latest = appVersionInfo?.latest_version || '?.?.?';
-      const notes = appVersionInfo?.release_notes ? `\n\nRelease Notes:\n${appVersionInfo.release_notes}` : '';
-      dlg('Update Required', `A client update is required to access online features.\n\nYour version: v${APP_VERSION}\nLatest required version: v${latest}${notes}`, 'Download', 'Cancel')
+      dlg('Update Required', updateRequiredDialogBody(), 'Download', 'Cancel')
         .then(res => {
           if (res) downloadLatestHtml();
         });
@@ -1670,12 +1698,13 @@ const setAppMode = (nextMode, closeMenu=true) => {
     }
   }
   mode = nextMode;
+  if (mode === 'local') queuedPremove = null;
   const signedIn = !!rankedUser;
   const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
   $('lobby').dataset.mode = mode;
   $('screen-title').textContent = copy.title;
   $('screen-kicker').textContent = copy.kicker;
-  $('app-title').textContent = `${copy.title} Chess`;
+  $('app-title').textContent = mode === 'account' ? 'Account' : `${copy.title} Chess`;
   document.querySelectorAll('.menu-item').forEach(item => {
     item.classList.toggle('on', item.dataset.menuMode === mode);
   });
@@ -1745,15 +1774,14 @@ const compareVersions = (a, b) => {
 
 const versionUpdateMessage = () => {
   const latest = appVersionInfo?.latest_version || appVersionInfo?.minimum_supported_version || 'latest';
-  const notes = appVersionInfo?.release_notes ? `\n\nRelease Notes:\n${appVersionInfo.release_notes}` : '';
-  return `Update required. This app is v${APP_VERSION}; latest required version is v${latest}. Online, ranked, accounts, and leaderboard are disabled until you update.${notes}`;
+  return `Update required. This app is v${APP_VERSION}; latest version is v${latest}. Online, ranked, accounts, and leaderboard are disabled until you update.`;
 };
 
 const applyOnlineFeatureGate = () => {
   document.body.classList.toggle('server-offline', !serverOnline);
   document.body.classList.toggle('update-required', serverOnline && updateRequired);
   const message = !serverOnline
-    ? 'Server connection lost. Online games, ranked, leaderboard, and account editing are paused until Supabase reconnects.'
+    ? 'Connection lost. Online games, ranked, leaderboard, and account editing are paused until service returns.'
     : updateRequired
       ? versionUpdateMessage()
       : '';
@@ -1763,7 +1791,7 @@ const applyOnlineFeatureGate = () => {
   document.querySelectorAll('[data-online-only]').forEach(el => {
     el.disabled = onlineFeaturesPaused();
     el.title = !serverOnline
-      ? 'Server unavailable. Online features are paused.'
+      ? 'Online service unavailable. Online features are paused.'
       : updateRequired
         ? 'Update required. Online features are paused.'
         : '';
@@ -1779,7 +1807,7 @@ const updateHeaderStatus = () => {
     txt.textContent = 'Checking';
   } else if (!serverOnline) {
     dot.className = 'dot err';
-    txt.textContent = 'Server offline';
+    txt.textContent = 'Offline';
   } else if (updateRequired) {
     dot.className = 'dot err';
     txt.textContent = 'Update required';
@@ -1806,21 +1834,21 @@ const setServerOnline = async (online, message='') => {
   applyOnlineFeatureGate();
   if (!serverOnline) {
     serverWasOffline = true;
-    rankedMsg('ranked-auth-msg', message || 'Server unavailable. Account features are paused.', 'err');
-    rankedMsg('ranked-profile-msg', message || 'Server unavailable. Profile editing is paused.', 'err');
+    rankedMsg('ranked-auth-msg', message || 'Online service unavailable. Account features are paused.', 'err');
+    rankedMsg('ranked-profile-msg', message || 'Online service unavailable. Profile editing is paused.', 'err');
     if (mode === 'multiplayer' && wasOnline) {
       stopClock();
       if (!serverOfflineGameNoticeShown) {
         serverOfflineGameNoticeShown = true;
-        addChat('System', 'Server connection lost. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
+        addChat('System', 'Online connection lost. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
       }
     }
   } else if (serverWasOffline) {
     serverWasOffline = false;
     serverOfflineGameNoticeShown = false;
-    rankedMsg('ranked-auth-msg', 'Server connection restored.', 'ok');
+    rankedMsg('ranked-auth-msg', 'Online connection restored.', 'ok');
     if (mode === 'multiplayer' && conn?.open && !opponentDisconnected) {
-      addChat('System', 'Server connection restored. Online actions are available again.', 'sys');
+      addChat('System', 'Online connection restored. Online actions are available again.', 'sys');
       if (timerEnabled && !gameOver && !isReconnecting) startClock();
     }
     if (rankedUser) await validateRankedSession({ silent: true });
@@ -1836,7 +1864,7 @@ const setUpdateRequired = (required, info=null) => {
   applyOnlineFeatureGate();
   if (required && !wasRequired) {
     if (gameIsActive() && !gameOver) {
-      addChat('System', 'A client update is available. Please download the latest version after this game to continue playing online.', 'sys');
+      addChat('System', 'An app update is available. Please download the latest version after this game to continue playing online.', 'sys');
     } else if (mode === 'multiplayer') {
       stopClock();
       if (!serverOfflineGameNoticeShown) {
@@ -1851,9 +1879,7 @@ const setUpdateRequired = (required, info=null) => {
   
   if (isInitialLoad) {
     if (required) {
-      const latest = appVersionInfo?.latest_version || '?.?.?';
-      const notes = appVersionInfo?.release_notes ? `\n\nRelease Notes:\n${appVersionInfo.release_notes}` : '';
-      dlg('Update Required', `A client update is required to access online features.\n\nYour version: v${APP_VERSION}\nLatest required version: v${latest}${notes}`, 'Download', 'Cancel')
+      dlg('Update Required', updateRequiredDialogBody(), 'Download', 'Cancel')
         .then(res => {
           if (res) downloadLatestHtml();
         });
@@ -1897,39 +1923,41 @@ const checkServerConnection = async () => {
     await checkAppVersion();
     return true;
   } catch (err) {
-    await setServerOnline(false, `Server unavailable: ${err.message || err}`);
+    await setServerOnline(false, `Online service unavailable: ${err.message || err}`);
     return false;
   }
 };
 
-const requireServerOnline = (message='This online feature is unavailable while the server is disconnected.') => {
+const requireServerOnline = (message='This online feature is unavailable while the online service is disconnected.') => {
   if (serverOnline && !updateRequired) return true;
   if (updateRequired) {
-    dlg('Update Required', versionUpdateMessage());
+    dlg('Update Required', updateRequiredDialogBody(), 'Download', 'Cancel').then(res => {
+      if (res) downloadLatestHtml();
+    });
     return false;
   }
-  dlg('Server Offline', message);
+  dlg('Connection Offline', message);
   return false;
 };
 
 const downloadLatestHtml = async () => {
   const expected = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
   if (APP_DOWNLOAD_URL !== expected) {
-    dlg('Update Error', 'Download URL is not the approved GitHub HTML file.');
+    dlg('Update Error', 'Download URL is not the approved app update file.');
     return;
   }
   try {
     const fetchUrl = `${expected}?download=${Date.now()}`;
     const res = await fetch(fetchUrl, { cache: 'reload' });
-    if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
+    if (!res.ok) throw new Error(`Download service returned ${res.status}`);
     const text = await res.text();
     if (!text.includes('<!DOCTYPE html') || !text.includes('APP_VERSION')) {
-      throw new Error('Downloaded file did not look like the Open Chess HTML client.');
+      throw new Error('Downloaded file did not look like the Open Chess app.');
     }
     const downloadedVersion = text.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1] || '0.0.0';
     const requiredVersion = appVersionInfo?.minimum_supported_version || appVersionInfo?.latest_version || APP_VERSION;
     if (compareVersions(downloadedVersion, requiredVersion) < 0) {
-      throw new Error(`GitHub main still has v${downloadedVersion}, but Supabase requires v${requiredVersion}. Push the updated HTML to main first.`);
+      throw new Error(`The latest download is still v${downloadedVersion}, but this app requires v${requiredVersion}. Try again after the latest file is published.`);
     }
     const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
     const a = document.createElement('a');
@@ -1940,7 +1968,7 @@ const downloadLatestHtml = async () => {
     URL.revokeObjectURL(a.href);
     a.remove();
   } catch (err) {
-    dlg('Download Failed', `Could not download the latest chess_client.html from GitHub: ${err.message || err}`);
+    dlg('Download Failed', `Could not download the latest chess_client.html: ${err.message || err}`);
   }
 };
 
@@ -2151,7 +2179,7 @@ const startAccountPresence = async () => {
 };
 
 const loadRankedLeaderboard = async () => {
-  if (!sb || !requireServerOnline('Leaderboard is unavailable while the server is disconnected.')) return;
+  if (!sb || !requireServerOnline('Leaderboard is unavailable while the online service is disconnected.')) return;
   try {
     const { data, error } = await sb
       .from('profiles')
@@ -2365,8 +2393,8 @@ const renderRankedAuth = () => {
 const initSupabase = async () => {
   if (!window.supabase?.createClient) {
     rankedReady = false;
-    await setServerOnline(false, 'Supabase client did not load. Online features are paused.');
-    rankedMsg('ranked-auth-msg', 'Supabase client did not load. Check the CDN connection.', 'err');
+    await setServerOnline(false, 'Online service did not load. Online features are paused.');
+    rankedMsg('ranked-auth-msg', 'Online service did not load. Check your connection.', 'err');
     return;
   }
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -2402,7 +2430,7 @@ const initSupabase = async () => {
 
 const rankedSignIn = async () => {
   if (!sb) return;
-  if (!requireServerOnline('Sign in is unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Sign in is unavailable while the online service is disconnected.')) return;
   show('ranked-username', false);
   const email = $('ranked-email').value.trim();
   const password = $('ranked-password').value;
@@ -2442,7 +2470,7 @@ const rankedSignIn = async () => {
 
 const rankedSignUp = async () => {
   if (!sb) return;
-  if (!requireServerOnline('Account creation is unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Account creation is unavailable while the online service is disconnected.')) return;
   if ($('ranked-username').style.display === 'none') {
     show('ranked-username', true);
     $('ranked-username').focus();
@@ -2482,7 +2510,7 @@ const rankedSignUp = async () => {
     return;
   }
 
-  // Supabase "ghost signup": duplicate email with confirmation enabled returns
+    // Duplicate email with confirmation enabled can return an obfuscated identity response.
   // no error but also no user (identities array is empty).
   if (!data?.user || data.user.identities?.length === 0) {
     rankedMsg('ranked-auth-msg', 'An account with that email already exists. Please sign in instead.', 'err');
@@ -2509,7 +2537,7 @@ const rankedSignUp = async () => {
 
 const updateRankedProfile = async (changes, showMessage=true) => {
   if (!sb || !rankedUser) return false;
-  if (!requireServerOnline('Profile editing is unavailable while the server is disconnected.')) return false;
+  if (!requireServerOnline('Profile editing is unavailable while the online service is disconnected.')) return false;
   try {
     const { error } = await sb.from('profiles').update(changes).eq('id', rankedUser.id);
     if (error) {
@@ -2615,7 +2643,7 @@ const avatarCropToBlob = () => new Promise(resolve => {
 
 const rankedSaveProfile = async () => {
   if (!sb || !rankedUser) return;
-  if (!requireServerOnline('Profile editing is unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Profile editing is unavailable while the online service is disconnected.')) return;
   try {
     const username = cleanUsername($('ranked-username-input').value);
     if (!username) {
@@ -2655,7 +2683,7 @@ const rankedSignOut = async () => {
 
 const rankedDeleteAccount = async () => {
   if (!sb || !rankedUser) return;
-  if (!requireServerOnline('Account deletion is unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Account deletion is unavailable while the online service is disconnected.')) return;
   const ok1 = await dlg('Delete Account', 'Are you sure you want to permanently delete your account? This will erase all ELO progress, statistics, and profile details.', 'Delete Permanently', 'Cancel');
   if (!ok1) return;
   const ok2 = await dlg('Confirm Deletion', 'This action is absolutely irreversible. Are you 100% sure you want to delete your account?', 'Yes, Delete It', 'No, Keep Account');
@@ -2843,7 +2871,7 @@ const renderBoard = () => {
 
       if (selSq === sq) el.classList.add('sel');
       if (last && (last.from === sq || last.to === sq)) el.classList.add('last');
-      if (queuedPremove && (queuedPremove.from === sq || queuedPremove.to === sq)) el.classList.add('premove-hl');
+      if (mode !== 'local' && queuedPremove && (queuedPremove.from === sq || queuedPremove.to === sq)) el.classList.add('premove-hl');
 
       const pc = chess.get(sq);
       if (pc) {
@@ -3038,7 +3066,7 @@ const showGameEndFeedback = () => {
 const submitRankedGameResult = async (result) => {
   if (!sb || !rankedUser || !isRankedGame || rankedResultSubmitted) return;
   if (!serverOnline) {
-    dlg('Server Offline', 'Ranked result submission is paused while the server is disconnected.');
+    dlg('Connection Offline', 'Ranked result submission is paused while the online service is disconnected.');
     return;
   }
   if (!resolveRankedPlayerIds()) {
@@ -3221,7 +3249,7 @@ const renderArrowsAndHighlights = () => {
   marker.setAttribute('id', 'arrowhead-notation');
   marker.setAttribute('markerWidth', '6');
   marker.setAttribute('markerHeight', '6');
-  marker.setAttribute('refX', '4');
+  marker.setAttribute('refX', '5.4');
   marker.setAttribute('refY', '3');
   marker.setAttribute('orient', 'auto');
   
@@ -3260,7 +3288,7 @@ const renderArrowsAndHighlights = () => {
     const dist = Math.hypot(dx, dy);
     if (dist === 0) return;
     
-    const offset = 26;
+    const offset = 34;
     const xEnd = end.x - (dx / dist) * offset;
     const yEnd = end.y - (dy / dist) * offset;
     
@@ -3273,7 +3301,7 @@ const renderArrowsAndHighlights = () => {
     line.setAttribute('stroke-width', '8');
     line.setAttribute('opacity', '0.78');
     line.setAttribute('marker-end', 'url(#arrowhead-notation)');
-    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('stroke-linecap', 'butt');
     
     container.appendChild(line);
   });
@@ -3306,6 +3334,20 @@ const clearArrowsAndHighlights = () => {
   }
 };
 
+const premoveDestsFor = (sq) => {
+  const pc = chess.get(sq);
+  if (!pc || pc.color !== myColor || chess.turn() === myColor || mode === 'local') return [];
+  try {
+    const parts = chess.fen().split(' ');
+    parts[1] = pc.color;
+    parts[3] = '-';
+    const preview = new Chess(parts.join(' '));
+    return preview.moves({ square: sq, verbose: true }).map(m => m.to);
+  } catch (err) {
+    return [];
+  }
+};
+
 const onRightClickUp = (e) => {
   window.removeEventListener('pointerup', onRightClickUp);
   isRightClickDragging = false;
@@ -3323,6 +3365,10 @@ const onRightClickUp = (e) => {
 };
 
 const handlePremoveExecution = async () => {
+  if (mode === 'local') {
+    queuedPremove = null;
+    return;
+  }
   if (!premovesEnabled || !queuedPremove) return;
   const pm = queuedPremove;
   queuedPremove = null;
@@ -3414,13 +3460,15 @@ const onSqDown = (e) => {
 
   // Initiate Premove drag if it's not our turn
   if (e.button === 0 && !canMove && premovesEnabled && pc && pc.color === myColor) {
-    selSq = sq;
-    legalDests = [];
-    for (let f of ['a','b','c','d','e','f','g','h']) {
-      for (let r = 1; r <= 8; r++) {
-        if (`${f}${r}` !== sq) legalDests.push(`${f}${r}`);
-      }
+    const premoveDests = premoveDestsFor(sq);
+    if (!premoveDests.length) {
+      selSq = null;
+      legalDests = [];
+      renderBoard();
+      return;
     }
+    selSq = sq;
+    legalDests = premoveDests;
     isDragging = true;
     dragFrom = sq;
     renderBoard();
@@ -3524,8 +3572,13 @@ const doMove = async (from, to) => {
   const isPremove = mode !== 'local' && turn !== myColor;
 
   if (isPremove) {
-    if (premovesEnabled) {
+    const premoveDests = premoveDestsFor(from);
+    if (premovesEnabled && premoveDests.includes(to)) {
       queuedPremove = { from, to };
+      selSq = null;
+      legalDests = [];
+      renderBoard();
+    } else {
       selSq = null;
       legalDests = [];
       renderBoard();
@@ -3606,7 +3659,6 @@ $('btn-resign').onclick = async () => {
   renderBoard(); updateStatus();
   if (isRankedGame) await submitRankedGameResult(aborting ? 'aborted' : resultForLocalLoss());
   if (mode === 'multiplayer') sendPeer({ type: aborting ? 'abort' : 'resign', color: loserColor });
-  dlg(aborting ? 'Game Aborted' : 'Resignation', gameOverReason);
 };
 
 $('btn-draw').onclick = async () => {
@@ -3617,7 +3669,6 @@ $('btn-draw').onclick = async () => {
       gameOver = true; gameOverReason = 'Draw by agreement';
       stopClock(); snd('end');
       renderBoard(); updateStatus();
-      dlg('Draw', 'Game ended in a draw by agreement.');
     }
   } else if (sendPeer({ type: 'draw_offer' })) {
     dlg('Draw Offered', 'Waiting for opponent...');
@@ -3760,6 +3811,7 @@ const goGame = () => {
   queuedPremove = null;
   clearArrowsAndHighlights();
   show('tab-ranked', mode !== 'local');
+  show('setting-premove-container', mode !== 'local');
 
   // If activeTC is not initialized, set it from the current lobby selection
   if (!activeTC) {
@@ -3999,6 +4051,7 @@ const syncMatchmakingUi = () => {
   show('name-grp-double', mode === 'local');
   show('setting-auto-flip', mode === 'local');
   show('setting-flip-delay-container', mode === 'local' && autoFlipLocal);
+  show('setting-premove-container', mode !== 'local');
 
   show('btn-start-local', mode === 'local');
   show('btn-create', mode === 'online');
@@ -4135,6 +4188,7 @@ document.querySelectorAll('.menu-item[data-menu-mode]').forEach(item => {
   item.onclick = () => setAppMode(item.dataset.menuMode);
 });
 $('nav-bug-report').onclick = openBugReport;
+$('header-report').onclick = openBugReport;
 $('menu-account').onclick = () => setAppMode('account');
 
 // Time control buttons
@@ -4579,7 +4633,7 @@ $('btn-start-local').onclick = () => {
 
 // ─── ONLINE: CREATE ───
 $('btn-create').onclick = () => {
-  if (!requireServerOnline('Online games are unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Online games are unavailable while the online service is disconnected.')) return;
   if (hasOpenMatchmakingRoom()) {
     dlg('Room Already Open', 'Close your open room before starting another one.');
     return;
@@ -4662,7 +4716,7 @@ $('btn-create').onclick = () => {
 };
 
 $('btn-create-ranked').onclick = () => {
-  if (!requireServerOnline('Ranked games are unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Ranked games are unavailable while the online service is disconnected.')) return;
   if (!rankedUser) {
     dlg('Authentication Required', 'You must be signed in to play ranked games.');
     return;
@@ -4755,7 +4809,7 @@ $('btn-close-open-room').onclick = () => {
 };
 
 const joinRoom = (code) => {
-  if (!requireServerOnline('Online games are unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Online games are unavailable while the online service is disconnected.')) return;
   if (hasOpenMatchmakingRoom()) {
     dlg('Room Already Open', 'Close your open room before joining another challenge.');
     return;
@@ -5131,7 +5185,7 @@ const handleMsg = async (d) => {
       const peerVer = d.version || '0.0.0';
       const minVer = appVersionInfo?.minimum_supported_version || APP_VERSION;
       if (compareVersions(peerVer, minVer) < 0 || compareVersions(peerVer, APP_VERSION) !== 0) {
-        dlg('Version Mismatch', `The host's client version (v${peerVer}) does not match your version (v${APP_VERSION}). Connection aborted.`);
+        dlg('Version Mismatch', `The host's app version (v${peerVer}) does not match your version (v${APP_VERSION}). Connection aborted.`);
         closeTransport();
         goLobby();
         break;
@@ -5191,7 +5245,7 @@ const handleMsg = async (d) => {
       const peerVer = d.version || '0.0.0';
       const minVer = appVersionInfo?.minimum_supported_version || APP_VERSION;
       if (compareVersions(peerVer, minVer) < 0 || compareVersions(peerVer, APP_VERSION) !== 0) {
-        rejectCurrentJoin('version_mismatch', `Your client version (v${peerVer}) does not match the host's version (v${APP_VERSION}).`);
+        rejectCurrentJoin('version_mismatch', `Your app version (v${peerVer}) does not match the host's version (v${APP_VERSION}).`);
         dlg('Connection Rejected', `A player tried to join but was rejected due to a version mismatch. Their version: v${peerVer}, required: v${APP_VERSION}`);
         break;
       }
@@ -5308,7 +5362,6 @@ const handleMsg = async (d) => {
       gameOver = true; gameOverReason = `${winner} wins by resignation`;
       stopClock(); snd('end');
       renderBoard(); updateStatus();
-      dlg('Resignation', gameOverReason);
       break;
     }
 
@@ -5317,7 +5370,6 @@ const handleMsg = async (d) => {
       stopClock(); snd('end');
       renderBoard(); updateStatus();
       if (isRankedGame) submitRankedGameResult('aborted');
-      dlg('Game Aborted', gameOverReason);
       break;
     }
 
@@ -5327,7 +5379,6 @@ const handleMsg = async (d) => {
       opponentDisconnected = true;
       stopClock(); snd('end');
       renderBoard(); setOpponentDisconnectedLabel(); updateStatus(); updateRematchForConnection();
-      dlg('Opponent Left', gameOverReason);
       break;
     }
 
@@ -5355,7 +5406,6 @@ const handleMsg = async (d) => {
       gameOver = true; gameOverReason = 'Draw by agreement';
       stopClock(); snd('end');
       renderBoard(); updateStatus();
-      dlg('Draw', 'Draw accepted.');
       break;
     }
     case 'draw_decline': {
@@ -5374,6 +5424,7 @@ const handleMsg = async (d) => {
     }
     case 'rematch_offer': {
       if (!onlineReady()) break;
+      const offerHc = isRankedGame ? { wMul: 1, bMul: 1, piece: 'none' } : (d.hc || { wMul: 1, bMul: 1, piece: 'none' });
       let tcDesc = '';
       if (d.tc.base === 0) {
         tcDesc = '∞ No Timer';
@@ -5381,9 +5432,11 @@ const handleMsg = async (d) => {
         tcDesc = `${Math.floor(d.tc.base / 60)}+${d.tc.inc}`;
       }
       let hcDesc = [];
-      if (d.hc.wMul !== 1) hcDesc.push(`W-Time ${d.hc.wMul}x`);
-      if (d.hc.bMul !== 1) hcDesc.push(`B-Time ${d.hc.bMul}x`);
-      if (d.hc.piece !== 'none') hcDesc.push(`Odds ${d.hc.piece}`);
+      if (!isRankedGame && !d.ranked) {
+        if (offerHc.wMul !== 1) hcDesc.push(`W-Time ${offerHc.wMul}x`);
+        if (offerHc.bMul !== 1) hcDesc.push(`B-Time ${offerHc.bMul}x`);
+        if (offerHc.piece !== 'none') hcDesc.push(`Odds ${offerHc.piece}`);
+      }
       const hcText = hcDesc.length > 0 ? ` [Handicaps: ${hcDesc.join(', ')}]` : '';
 
       const guestColorName = d.hostColor === 'w' ? 'Black' : 'White';
@@ -5393,12 +5446,12 @@ const handleMsg = async (d) => {
           type: 'rematch_accept',
           hostColor: d.hostColor,
           tc: d.tc,
-          hc: d.hc
+          hc: offerHc
         });
         activeTC = d.tc;
-        activeHcWMul = d.hc.wMul;
-        activeHcBMul = d.hc.bMul;
-        activeHcPiece = d.hc.piece;
+        activeHcWMul = offerHc.wMul;
+        activeHcBMul = offerHc.bMul;
+        activeHcPiece = offerHc.piece;
         myColor = d.hostColor === 'w' ? 'b' : 'w';
         flipped = myColor === 'b';
         setupOnlineGame(myColor === 'w' ? myName : opponentName, myColor === 'w' ? opponentName : myName, myColor);
@@ -5409,10 +5462,11 @@ const handleMsg = async (d) => {
       break;
     }
     case 'rematch_accept': {
+      const acceptHc = isRankedGame ? { wMul: 1, bMul: 1, piece: 'none' } : (d.hc || { wMul: 1, bMul: 1, piece: 'none' });
       activeTC = d.tc;
-      activeHcWMul = d.hc.wMul;
-      activeHcBMul = d.hc.bMul;
-      activeHcPiece = d.hc.piece;
+      activeHcWMul = acceptHc.wMul;
+      activeHcBMul = acceptHc.bMul;
+      activeHcPiece = acceptHc.piece;
       myColor = d.hostColor;
       flipped = myColor === 'b';
       setupOnlineGame(myColor === 'w' ? myName : opponentName, myColor === 'w' ? opponentName : myName, myColor);
@@ -5430,7 +5484,7 @@ const handleMsg = async (d) => {
 // ─── ONLINE LOBBY POPUP & REAL-TIME SETTINGS & REMATCH FLOW ───
 
 $('btn-show-rooms').onclick = () => {
-  if (!requireServerOnline('Online challenges are unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Online challenges are unavailable while the online service is disconnected.')) return;
   if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') {
     dlg('Room Already Open', 'Close your open ranked room before browsing online challenges.');
     return;
@@ -5448,7 +5502,7 @@ $('btn-show-rooms').onclick = () => {
 };
 
 $('btn-show-rooms-ranked').onclick = () => {
-  if (!requireServerOnline('Ranked challenges are unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Ranked challenges are unavailable while the online service is disconnected.')) return;
   if (!rankedUser) {
     dlg('Authentication Required', 'You must be signed in to view ranked challenges.');
     return;
@@ -5482,7 +5536,7 @@ $('btn-close-rooms').onclick = () => {
 };
 
 $('btn-refresh-rooms').onclick = () => {
-  if (!requireServerOnline('Challenge refresh is unavailable while the server is disconnected.')) return;
+  if (!requireServerOnline('Challenge refresh is unavailable while the online service is disconnected.')) return;
   if (lobbyWs && lobbyWs.readyState === WebSocket.OPEN) {
     sendLobbyMsg({ type: 'query_rooms' });
   } else {
@@ -5543,6 +5597,8 @@ $('btn-rematch').onclick = () => {
   }
   if (isHost) {
     $('m-rematch').classList.add('on');
+    show('rematch-color-block', !isRankedGame);
+    show('rematch-handicap-block', !isRankedGame);
     const tc = activeTC || getSelectedTC();
     $('rematch-tc').value = `${tc.base}|${tc.inc}`;
     $('rematch-hc-w').value = activeHcWMul;
@@ -5560,13 +5616,13 @@ $('rematch-send').onclick = () => {
     blockRematchButton('Rematch unavailable: opponent disconnected.');
     return;
   }
-  const colorChosen = document.querySelector('.rematch-c-btn.on')?.dataset.c || 'w';
+  const colorChosen = isRankedGame ? 'random' : (document.querySelector('.rematch-c-btn.on')?.dataset.c || 'w');
   const tcVal = $('rematch-tc').value.split('|');
   const base = parseInt(tcVal[0]);
   const inc = parseInt(tcVal[1]);
-  const hcW = parseFloat($('rematch-hc-w').value);
-  const hcB = parseFloat($('rematch-hc-b').value);
-  const piece = $('rematch-hc-pieces').value;
+  const hcW = isRankedGame ? 1 : parseFloat($('rematch-hc-w').value);
+  const hcB = isRankedGame ? 1 : parseFloat($('rematch-hc-b').value);
+  const piece = isRankedGame ? 'none' : $('rematch-hc-pieces').value;
   
   let hostColor = colorChosen;
   if (hostColor === 'random') hostColor = Math.random() < 0.5 ? 'w' : 'b';
@@ -5575,7 +5631,8 @@ $('rematch-send').onclick = () => {
       type: 'rematch_offer',
       hostColor: hostColor,
       tc: { base, inc },
-      hc: { wMul: hcW, bMul: hcB, piece }
+      hc: { wMul: hcW, bMul: hcB, piece },
+      ranked: isRankedGame
     })) {
     $('m-rematch').classList.remove('on');
     setRematchPending('Offered...');
@@ -5594,6 +5651,7 @@ window.onload = () => {
     return;
   }
   applyTheme('green');
+  $('app-version').textContent = `v${APP_VERSION}`;
   setLastMoveColor(lastMoveColor);
   setShadows(shadowsOn);
   populatePieceSelect();
