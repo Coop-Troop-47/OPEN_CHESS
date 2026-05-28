@@ -666,6 +666,12 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
       </div>
       <button id="btn-cancel-create" class="btn sec" style="margin-top:12px;width:100%">Close Room</button>
     </div>
+
+    <div id="open-room-blocker" class="share-box" style="display:none">
+      <div class="ranked-title">Room Already Open</div>
+      <div id="open-room-blocker-text" style="font-size:12px;color:var(--text2);line-height:1.35"></div>
+      <button id="btn-close-open-room" class="btn sec" style="margin-top:12px;width:100%">Close Open Room</button>
+    </div>
   </div>
 
   <div id="ranked-leaderboard-panel" class="lobby ranked-leaderboard-panel" style="display:none">
@@ -1162,7 +1168,7 @@ class MockConnection {
 const Peer = MockPeer;
 
 // ─── SUPABASE CONFIG ───
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.5.1';
 const APP_DOWNLOAD_URL = 'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html';
 const SUPABASE_URL = 'https://pwnblygocbbizpbscqig.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3bmJseWdvY2JiaXpwYnNjcWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE0MzIsImV4cCI6MjA5NTM3NzQzMn0.HbtM3SjKLaVpUDKHB44NxOBQbRH5cLfwwngEABPVAco';
@@ -1423,9 +1429,6 @@ const updateMenuAccount = () => {
 
 const setAppMode = (nextMode, closeMenu=true) => {
   if (gameIsActive()) return;
-  if (hasOpenMatchmakingRoom() && nextMode !== matchmakingMode) {
-    cancelOpenMatchmakingRoom(`Switched from ${matchmakingMode} matchmaking.`);
-  }
   mode = nextMode;
   const signedIn = !!rankedUser;
   const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
@@ -1442,6 +1445,7 @@ const setAppMode = (nextMode, closeMenu=true) => {
   $('sect-ranked').classList.toggle('on', mode === 'ranked');
   $('sect-account').classList.toggle('on', mode === 'account');
   show('ranked-leaderboard-panel', mode === 'ranked');
+  show('btn-start-local', mode === 'local');
   show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
   show('name-grp-single', mode === 'online' || mode === 'ranked');
   show('name-grp-double', mode === 'local');
@@ -2080,6 +2084,7 @@ const renderRankedAuth = () => {
     $('side-ranked-account').textContent = 'Sign in from the Ranked lobby.';
     updateMenuAccount();
     updateHeaderStatus();
+    syncMatchmakingUi();
     return;
   }
   const p = rankedProfile || {};
@@ -2095,6 +2100,7 @@ const renderRankedAuth = () => {
   setRankedAvatar(p);
   updateMenuAccount();
   updateHeaderStatus();
+  syncMatchmakingUi();
 };
 
 const initSupabase = async () => {
@@ -3120,13 +3126,16 @@ const goLobby = () => {
   $('sect-ranked').classList.toggle('on', mode === 'ranked');
   $('sect-account').classList.toggle('on', mode === 'account');
   show('ranked-leaderboard-panel', mode === 'ranked');
+  show('btn-start-local', mode === 'local');
   syncHeaderMode();
   show('share-box', false);
+  show('open-room-blocker', false);
   
   // Toggle matchmaking buttons based on current mode
   const signedIn = !!rankedUser;
   show('btn-create', mode === 'online');
   show('btn-show-rooms', mode === 'online');
+  show('btn-start-local', mode === 'local');
   show('ranked-matchmaking-card', mode === 'ranked' && signedIn);
   show('ranked-matchmaking-locked-card', mode === 'ranked' && !signedIn);
   show('btn-create-ranked', mode === 'ranked' && signedIn);
@@ -3397,9 +3406,41 @@ const setMatchmakingControlsLocked = (locked) => {
 const syncMatchmakingUi = () => {
   const open = hasOpenMatchmakingRoom();
   setMatchmakingControlsLocked(open);
-  if (!open) return;
-  show('share-box', true);
+  const ownTab = open && mode === matchmakingMode;
+  const otherPlayTab = open && (mode === 'local' || mode === 'online' || mode === 'ranked') && mode !== matchmakingMode;
+
+  show('share-box', ownTab);
+  show('open-room-blocker', otherPlayTab);
+  if (otherPlayTab) {
+    const label = matchmakingMode === 'ranked' ? 'ranked' : 'online';
+    $('open-room-blocker-text').textContent = `You already have an ${label} room open. Close that room before starting or joining another game.`;
+    show('setup-options', false);
+    show('btn-start-local', false);
+    show('btn-create', false);
+    show('btn-show-rooms', false);
+    show('ranked-matchmaking-card', false);
+    show('ranked-matchmaking-locked-card', false);
+    show('ranked-leaderboard-panel', false);
+    return;
+  }
+
+  if (open && !ownTab) {
+    show('setup-options', false);
+    show('btn-start-local', false);
+    show('btn-create', false);
+    show('btn-show-rooms', false);
+    return;
+  }
+
+  if (!open) {
+    show('share-box', false);
+    show('open-room-blocker', false);
+    return;
+  }
+
+  show('open-room-blocker', false);
   show('setup-options', true);
+  show('btn-start-local', false);
   show('btn-create', false);
   show('btn-show-rooms', false);
   if (mode === 'ranked') {
@@ -3424,9 +3465,11 @@ const cancelOpenMatchmakingRoom = (reason='Room closed.') => {
   matchmakingMode = null;
   isRanked = false;
   show('share-box', false);
+  show('open-room-blocker', false);
   setMatchmakingControlsLocked(false);
   setStatus('', 'Offline');
   if (reason) rankedMsg('ranked-auth-msg', reason, '');
+  setAppMode(mode, false);
 };
 
 const rejectCurrentJoin = (reason, message) => {
@@ -3937,7 +3980,10 @@ $('btn-start-local').onclick = () => {
 // ─── ONLINE: CREATE ───
 $('btn-create').onclick = () => {
   if (!requireServerOnline('Online games are unavailable while the server is disconnected.')) return;
-  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') cancelOpenMatchmakingRoom('Closed the ranked room before opening an online room.');
+  if (hasOpenMatchmakingRoom()) {
+    dlg('Room Already Open', 'Close your open room before starting another one.');
+    return;
+  }
   isRanked = false;
   isRankedGame = false;
   hostUserId = rankedUser?.id || null;
@@ -4021,7 +4067,10 @@ $('btn-create-ranked').onclick = () => {
     dlg('Authentication Required', 'You must be signed in to play ranked games.');
     return;
   }
-  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'ranked') cancelOpenMatchmakingRoom('Closed the online room before opening a ranked room.');
+  if (hasOpenMatchmakingRoom()) {
+    dlg('Room Already Open', 'Close your open room before starting another one.');
+    return;
+  }
   isRanked = true;
   isRankedGame = false;
   myName = rankedProfile?.username || rankedUser.email || 'Player';
@@ -4098,20 +4147,19 @@ $('btn-create-ranked').onclick = () => {
 };
 
 $('btn-cancel-create').onclick = () => {
-  if (roomId) {
-    removeRoom(roomId);
-  }
-  if (announceInterval) {
-    clearInterval(announceInterval);
-    announceInterval = null;
-  }
-  matchmakingMode = null;
-  goLobby();
+  cancelOpenMatchmakingRoom('Room closed.');
+};
+
+$('btn-close-open-room').onclick = () => {
+  cancelOpenMatchmakingRoom('Room closed.');
 };
 
 const joinRoom = (code) => {
   if (!requireServerOnline('Online games are unavailable while the server is disconnected.')) return;
-  if (hasOpenMatchmakingRoom()) cancelOpenMatchmakingRoom('Closed the open room before joining another challenge.');
+  if (hasOpenMatchmakingRoom()) {
+    dlg('Room Already Open', 'Close your open room before joining another challenge.');
+    return;
+  }
   // Close lobby socket during game
   if (lobbyWs) {
     try { lobbyWs.close(); } catch(e){}
@@ -4758,7 +4806,10 @@ const handleMsg = async (d) => {
 
 $('btn-show-rooms').onclick = () => {
   if (!requireServerOnline('Online challenges are unavailable while the server is disconnected.')) return;
-  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') cancelOpenMatchmakingRoom('Closed the ranked room before opening online challenges.');
+  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'online') {
+    dlg('Room Already Open', 'Close your open ranked room before browsing online challenges.');
+    return;
+  }
   lobbyFilterMode = 'online';
   $('btn-close-rooms').textContent = 'Close';
   $('m-rooms-lobby').classList.add('on');
@@ -4777,7 +4828,10 @@ $('btn-show-rooms-ranked').onclick = () => {
     dlg('Authentication Required', 'You must be signed in to view ranked challenges.');
     return;
   }
-  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'ranked') cancelOpenMatchmakingRoom('Closed the online room before opening ranked challenges.');
+  if (hasOpenMatchmakingRoom() && matchmakingMode !== 'ranked') {
+    dlg('Room Already Open', 'Close your open online room before browsing ranked challenges.');
+    return;
+  }
   lobbyFilterMode = 'ranked';
   $('btn-close-rooms').textContent = 'Close';
   $('m-rooms-lobby').classList.add('on');

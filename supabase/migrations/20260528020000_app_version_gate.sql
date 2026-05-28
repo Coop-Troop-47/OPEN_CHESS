@@ -28,8 +28,8 @@ insert into public.app_version_gate (
 )
 values (
   true,
-  '0.5.0',
-  '0.5.0',
+  '0.5.1',
+  '0.5.1',
   'https://raw.githubusercontent.com/Coop-Troop-47/OPEN_CHESS/main/chess_client.html',
   'Initial server-backed client version gate.'
 )
@@ -39,4 +39,3 @@ set latest_version = excluded.latest_version,
     download_url = excluded.download_url,
     release_notes = excluded.release_notes,
     updated_at = now();
-
