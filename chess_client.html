@@ -1666,11 +1666,17 @@ const downloadLatestHtml = async () => {
     return;
   }
   try {
-    const res = await fetch(expected, { cache: 'no-store' });
+    const fetchUrl = `${expected}?download=${Date.now()}`;
+    const res = await fetch(fetchUrl, { cache: 'reload' });
     if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
     const text = await res.text();
     if (!text.includes('<!DOCTYPE html') || !text.includes('APP_VERSION')) {
       throw new Error('Downloaded file did not look like the Open Chess HTML client.');
+    }
+    const downloadedVersion = text.match(/const\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/)?.[1] || '0.0.0';
+    const requiredVersion = appVersionInfo?.minimum_supported_version || appVersionInfo?.latest_version || APP_VERSION;
+    if (compareVersions(downloadedVersion, requiredVersion) < 0) {
+      throw new Error(`GitHub main still has v${downloadedVersion}, but Supabase requires v${requiredVersion}. Push the updated HTML to main first.`);
     }
     const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
     const a = document.createElement('a');
