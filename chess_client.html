@@ -77,6 +77,8 @@ input,select,textarea,button{font-family:inherit;font-size:inherit}
 /* ── MAIN LAYOUT ── */
 main{flex:1;min-height:calc(100vh - 48px);display:flex;justify-content:center;align-items:center;padding:16px;gap:16px}
 body.game-active main{align-items:flex-start}
+body.ranked-lobby main{gap:2px}
+body.ranked-lobby main #lobby, body.ranked-lobby main #ranked-leaderboard-panel{margin:0}
 .col-board{display:flex;flex-direction:column;gap:6px;width:var(--board-sz);flex-shrink:0}
 .col-side{width:320px;display:flex;flex-direction:column;gap:8px;max-height:calc(var(--board-sz) + 80px)}
 
@@ -123,6 +125,7 @@ body.game-active main{align-items:flex-start}
 .sq.d{background:var(--sq-d);color:var(--sq-d-t)}
 .sq.sel{box-shadow:inset 0 0 0 3px var(--sq-sel)}
 .sq.last::after{content:'';position:absolute;inset:0;background:var(--sq-move);pointer-events:none}
+.sq.premove-hl::after{content:'';position:absolute;inset:0;background:var(--sq-premove);pointer-events:none;z-index:1}
 .sq.chk{background:var(--sq-check)!important;animation:chkpulse 1.2s infinite alternate}
 @keyframes chkpulse{to{box-shadow:inset 0 0 12px 2px rgba(235,50,50,.35)}}
 .sq .dot-move{width:26%;height:26%;border-radius:50%;background:rgba(0,0,0,.12);pointer-events:none;position:absolute}
@@ -223,7 +226,12 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .ranked-stat span{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
 .lobby[data-mode=ranked]{max-width:480px}
 .lobby[data-mode=account]{max-width:560px}
-.ranked-leaderboard-panel{max-width:420px}
+.ranked-leaderboard-panel{max-width:400px;display:flex;flex-direction:column}
+#ranked-leaderboard{max-height:480px;overflow-y:auto;padding-right:6px;margin-bottom:12px}
+#ranked-leaderboard::-webkit-scrollbar{width:6px}
+#ranked-leaderboard::-webkit-scrollbar-track{background:transparent}
+#ranked-leaderboard::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+#ranked-leaderboard::-webkit-scrollbar-thumb:hover{background:var(--border2)}
 .playing-banner{font-weight:700;font-size:14px;color:var(--text);padding:7px 9px;background:var(--bg);border:1px solid var(--border);border-radius:3px}
 .avatar-crop-wrap{position:relative;width:min(320px,72vw);aspect-ratio:1;margin:0 auto 14px;background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;touch-action:none}
 .avatar-crop-img{position:absolute;top:50%;left:50%;max-width:none;user-select:none;-webkit-user-drag:none;transform-origin:center}
@@ -282,9 +290,7 @@ body.no-shadows{--piece-shadow:none;--ghost-shadow:none}
 .share-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;margin-top:10px}
 .room-code{font-size:22px;font-weight:800;letter-spacing:3px;color:var(--text);background:var(--bg);padding:6px 16px;border-radius:3px;margin:8px 0;border:1px dashed var(--accent);display:inline-block;font-variant-numeric:tabular-nums}
 .share-box p{font-size:11px;color:var(--text3);margin-top:6px}
-.server-banner{display:none;margin:-4px 0 12px;padding:9px 11px;border:1px solid rgba(224,85,85,.35);background:rgba(224,85,85,.1);color:#ffb0b0;border-radius:4px;font-size:12px;font-weight:700;text-align:center;line-height:1.35}
-.server-banner button{margin-top:8px;width:auto;display:inline-flex;padding:7px 12px;font-size:12px}
-body.server-offline .server-banner,body.update-required .server-banner{display:block}
+
 body.server-offline [data-online-only],body.update-required [data-online-only]{opacity:.5;pointer-events:none}
 
 /* Active rooms list styling */
@@ -469,10 +475,6 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
   <div id="lobby" class="lobby">
     <h2 id="screen-title">Local</h2>
     <div id="screen-kicker" class="screen-kicker">Pass-and-play on this screen</div>
-    <div id="server-banner" class="server-banner">
-      <span id="server-banner-text">Checking online services...</span>
-      <button id="update-download" class="btn sec" type="button" style="display:none">Download latest</button>
-    </div>
 
     <!-- Name inputs, dynamically shown based on mode -->
     <div id="setup-options">
@@ -699,6 +701,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
       </div>
       <div class="board-wrap">
         <div id="board" class="board"></div>
+        <svg id="board-arrows" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;display:block;overflow:visible;"></svg>
         <div id="game-end-flash" class="game-end-flash">
           <div class="game-end-card">
             <div id="game-end-icon" class="game-end-icon">#</div>
@@ -801,9 +804,27 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
                 Auto flip board in local play
               </label>
             </div>
+            <div id="setting-flip-delay-container" class="setting" style="display:none">
+              <label>Board Flip Delay (seconds)</label>
+              <input type="number" id="flip-delay" value="0.5" min="0" max="10" step="0.1">
+            </div>
             <div class="setting">
               <label>Previous Move Highlight</label>
               <input type="color" id="last-move-color" value="#fff200" style="width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px">
+            </div>
+            <div class="setting">
+              <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--text2);font-size:13px;cursor:pointer">
+                <input type="checkbox" id="chk-premoting" checked>
+                Enable Pre-moving
+              </label>
+            </div>
+            <div class="setting">
+              <label>Premove Highlight Color</label>
+              <input type="color" id="premove-color" value="#f04f35" style="width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px">
+            </div>
+            <div class="setting">
+              <label>Notation Draw Color (Right Click)</label>
+              <input type="color" id="arrow-color" value="#81b64c" style="width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:4px">
             </div>
             <div class="setting">
               <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--text2);font-size:13px;cursor:pointer">
@@ -834,7 +855,7 @@ body.server-offline [data-online-only],body.update-required [data-online-only]{o
 <div id="m-dialog" class="modal-bg">
   <div class="modal">
     <h3 id="dlg-title">Title</h3>
-    <p id="dlg-body">Body</p>
+    <p id="dlg-body" style="white-space:pre-wrap">Body</p>
     <div id="dlg-btns" class="modal-btns">
       <button id="dlg-ok" class="btn">OK</button>
       <button id="dlg-cancel" class="btn sec" style="display:none">Cancel</button>
@@ -1179,6 +1200,7 @@ let mode = 'local', myColor = 'w', myName = 'Player';
 let selSq = null, legalDests = [], flipped = false, soundOn = true;
 let boardTheme = 'green', pieceStyle = 'cburnett';
 let autoFlipLocal = true;
+let localFlipTimeout = null;
 let lastMoveColor = '#fff200', shadowsOn = false;
 let peer = null, conn = null, isHost = false, roomId = null;
 let gameOver = false, gameOverReason = '';
@@ -1195,6 +1217,8 @@ let sb = null, rankedUser = null, rankedProfile = null, rankedReady = false;
 let serverOnline = true, serverStatusInterval = null, serverWasOffline = false;
 let serverChecked = false, updateRequired = false, appVersionInfo = null;
 let serverOfflineGameNoticeShown = false;
+let isInitialLoad = true;
+let premovesEnabled = true, premoveColor = '#f04f35', queuedPremove = null;
 const clientInstanceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let accountSessionStartedAt = 0;
 let accountSignInEpoch = 0;
@@ -1292,7 +1316,7 @@ const snd = (type) => {
 
 // ─── UI HELPERS ───
 const $ = id => document.getElementById(id);
-const show = (el, v=true) => { if (typeof el === 'string') el = $(el); el.style.display = v ? '' : 'none'; };
+const show = (el, v=true) => { if (typeof el === 'string') el = $(el); if (el) el.style.display = v ? '' : 'none'; };
 const fmtTime = (ms) => {
   if (ms <= 0) return '0:00';
   const totalSec = Math.ceil(ms / 1000);
@@ -1380,6 +1404,11 @@ const setLastMoveColor = (color) => {
   document.documentElement.style.setProperty('--sq-move', `${lastMoveColor}5c`);
 };
 
+const setPremoveColor = (color) => {
+  premoveColor = color || '#f04f35';
+  document.documentElement.style.setProperty('--sq-premove', `${premoveColor}5c`);
+};
+
 const setShadows = (enabled) => {
   shadowsOn = enabled;
   document.body.classList.toggle('no-shadows', !shadowsOn);
@@ -1401,6 +1430,10 @@ const syncHeaderMode = () => {
   show('menu-open', !inGame);
   show('header-leave', inGame);
   if (inGame) setMenuOpen(false);
+};
+
+const syncLayoutMode = () => {
+  document.body.classList.toggle('ranked-lobby', mode === 'ranked' && !gameIsActive());
 };
 
 const setMenuOpen = (open) => {
@@ -1429,6 +1462,21 @@ const updateMenuAccount = () => {
 
 const setAppMode = (nextMode, closeMenu=true) => {
   if (gameIsActive()) return;
+  if (nextMode === 'account' || nextMode === 'ranked' || nextMode === 'online') {
+    if (!serverOnline) {
+      dlg('Server Offline', 'The server is currently offline. Online, ranked, and account features are unavailable.');
+      return;
+    }
+    if (updateRequired) {
+      const latest = appVersionInfo?.latest_version || '?.?.?';
+      const notes = appVersionInfo?.release_notes ? `\n\nRelease Notes:\n${appVersionInfo.release_notes}` : '';
+      dlg('Update Required', `A client update is required to access online features.\n\nYour version: v${APP_VERSION}\nLatest required version: v${latest}${notes}`, 'Download', 'Cancel')
+        .then(res => {
+          if (res) downloadLatestHtml();
+        });
+      return;
+    }
+  }
   mode = nextMode;
   const signedIn = !!rankedUser;
   const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
@@ -1445,11 +1493,7 @@ const setAppMode = (nextMode, closeMenu=true) => {
   $('sect-ranked').classList.toggle('on', mode === 'ranked');
   $('sect-account').classList.toggle('on', mode === 'account');
   show('ranked-leaderboard-panel', mode === 'ranked');
-  show('btn-start-local', mode === 'local');
-  show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
-  show('name-grp-single', mode === 'online' || mode === 'ranked');
-  show('name-grp-double', mode === 'local');
-  show('setting-auto-flip', mode === 'local');
+  syncLayoutMode();
 
   // Toggle custom time controls based on mode
   if (mode === 'ranked') {
@@ -1509,7 +1553,8 @@ const compareVersions = (a, b) => {
 
 const versionUpdateMessage = () => {
   const latest = appVersionInfo?.latest_version || appVersionInfo?.minimum_supported_version || 'latest';
-  return `Update required. This app is v${APP_VERSION}; latest required version is v${latest}. Online, ranked, accounts, and leaderboard are disabled until you update.`;
+  const notes = appVersionInfo?.release_notes ? `\n\nRelease Notes:\n${appVersionInfo.release_notes}` : '';
+  return `Update required. This app is v${APP_VERSION}; latest required version is v${latest}. Online, ranked, accounts, and leaderboard are disabled until you update.${notes}`;
 };
 
 const applyOnlineFeatureGate = () => {
@@ -1597,15 +1642,31 @@ const setUpdateRequired = (required, info=null) => {
   updateRequired = required;
   appVersionInfo = info || appVersionInfo;
   applyOnlineFeatureGate();
-  if (required && !wasRequired && mode === 'multiplayer') {
-    stopClock();
-    if (!serverOfflineGameNoticeShown) {
-      serverOfflineGameNoticeShown = true;
-      addChat('System', 'Update required. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
+  if (required && !wasRequired) {
+    if (gameIsActive() && !gameOver) {
+      addChat('System', 'A client update is available. Please download the latest version after this game to continue playing online.', 'sys');
+    } else if (mode === 'multiplayer') {
+      stopClock();
+      if (!serverOfflineGameNoticeShown) {
+        serverOfflineGameNoticeShown = true;
+        addChat('System', 'Update required. Online actions are paused; if you leave now this game cannot be resumed from this browser session.', 'sys');
+      }
     }
   } else if (!required && wasRequired && mode === 'multiplayer') {
     serverOfflineGameNoticeShown = false;
     if (timerEnabled && !gameOver && !isReconnecting && conn?.open) startClock();
+  }
+  
+  if (isInitialLoad) {
+    if (required) {
+      const latest = appVersionInfo?.latest_version || '?.?.?';
+      const notes = appVersionInfo?.release_notes ? `\n\nRelease Notes:\n${appVersionInfo.release_notes}` : '';
+      dlg('Update Required', `A client update is required to access online features.\n\nYour version: v${APP_VERSION}\nLatest required version: v${latest}${notes}`, 'Download', 'Cancel')
+        .then(res => {
+          if (res) downloadLatestHtml();
+        });
+    }
+    isInitialLoad = false;
   }
   updateHeaderStatus();
 };
@@ -2590,6 +2651,7 @@ const renderBoard = () => {
 
       if (selSq === sq) el.classList.add('sel');
       if (last && (last.from === sq || last.to === sq)) el.classList.add('last');
+      if (queuedPremove && (queuedPremove.from === sq || queuedPremove.to === sq)) el.classList.add('premove-hl');
 
       const pc = chess.get(sq);
       if (pc) {
@@ -2632,26 +2694,46 @@ const renderBoard = () => {
     }
   }
 
+  const topColor = flipped ? 'w' : 'b';
+  const botColor = flipped ? 'b' : 'w';
+
   if (mode === 'local') {
     const botName = flipped ? localPlayerB : localPlayerW;
     const topName = flipped ? localPlayerW : localPlayerB;
     $('name-bot').textContent = botName;
     $('name-top').textContent = topName;
-    $('av-bot').className = `pbar-av ${flipped ? 'b' : 'w'}`;
+    $('av-bot').className = `pbar-av ${botColor}`;
     setPlayerAvatar('av-bot', null, botName[0]?.toUpperCase() || '?');
-    $('av-top').className = `pbar-av ${flipped ? 'w' : 'b'}`;
+    $('av-top').className = `pbar-av ${topColor}`;
     setPlayerAvatar('av-top', null, topName[0]?.toUpperCase() || '?');
+  } else {
+    const myRating = rankedProfile?.rating || 1200;
+    const oppRatingVal = myColor === 'w' ? guestRating : hostRating;
+
+    const myLabel = isRankedGame ? `${myName} (${myRating})` : myName;
+    const oppLabel = isRankedGame ? `${opponentName} (${oppRatingVal})` : opponentName;
+
+    const botName = botColor === myColor ? myLabel : oppLabel;
+    const topName = topColor === myColor ? myLabel : oppLabel;
+    const botAvatar = botColor === myColor ? myAvatarUrl : opponentAvatarUrl;
+    const topAvatar = topColor === myColor ? myAvatarUrl : opponentAvatarUrl;
+
+    $('name-bot').textContent = botName;
+    $('name-top').textContent = topName;
+    $('av-bot').className = `pbar-av ${botColor}`;
+    setPlayerAvatar('av-bot', botAvatar, (botColor === myColor ? myName : opponentName)[0]?.toUpperCase() || '?');
+    $('av-top').className = `pbar-av ${topColor}`;
+    setPlayerAvatar('av-top', topAvatar, (topColor === myColor ? myName : opponentName)[0]?.toUpperCase() || '?');
   }
 
   // Player bar active states
-  const topColor = flipped ? 'w' : 'b';
-  const botColor = flipped ? 'b' : 'w';
   $('pbar-top').classList.toggle('active', !gameOver && turn === topColor);
   $('pbar-bot').classList.toggle('active', !gameOver && turn === botColor);
 
   updateCaptures();
   renderTimers();
   setupPointers();
+  renderArrowsAndHighlights();
 };
 
 // ─── STATUS & MOVES ───
@@ -2763,7 +2845,10 @@ const showGameEndFeedback = () => {
 
 const submitRankedGameResult = async (result) => {
   if (!sb || !rankedUser || !isRankedGame || rankedResultSubmitted) return;
-  if (!requireServerOnline('Ranked result submission is paused while the server is disconnected.')) return;
+  if (!serverOnline) {
+    dlg('Server Offline', 'Ranked result submission is paused while the server is disconnected.');
+    return;
+  }
   if (!resolveRankedPlayerIds()) {
     addChat('System', 'Ranked result was not submitted because the ranked player identities were not confirmed before the game started.', 'sys');
     return;
@@ -2896,6 +2981,197 @@ const recordRoomResult = () => {
 // ─── POINTER HANDLING (DRAG + CLICK) ───
 let isDragging = false, dragFrom = null, dragPcEl = null;
 
+// Notation state
+let boardArrows = [];
+let boardHighlights = new Set();
+let arrowColor = '#81b64c'; // Default Chess.com green
+let rightClickStartSq = null;
+let isRightClickDragging = false;
+
+const getSquareCenter = (sq) => {
+  const sqEl = document.querySelector(`.sq[data-sq="${sq}"]`);
+  if (!sqEl) return null;
+  const boardEl = $('board');
+  const sqRect = sqEl.getBoundingClientRect();
+  const boardRect = boardEl.getBoundingClientRect();
+  
+  const x = sqRect.left - boardRect.left + sqRect.width / 2;
+  const y = sqRect.top - boardRect.top + sqRect.height / 2;
+  return { x, y };
+};
+
+const getSquareFromCoords = (cx, cy) => {
+  const bEl = $('board');
+  const rect = bEl.getBoundingClientRect();
+  const files = ['a','b','c','d','e','f','g','h'];
+  const ranks = [8,7,6,5,4,3,2,1];
+  const dF = flipped ? [...files].reverse() : files;
+  const dR = flipped ? [...ranks].reverse() : ranks;
+
+  if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
+    const cw = rect.width / 8, rh = rect.height / 8;
+    const ci = Math.floor((cx - rect.left) / cw);
+    const ri = Math.floor((cy - rect.top) / rh);
+    if (ci >= 0 && ci < 8 && ri >= 0 && ri < 8) {
+      return `${dF[ci]}${dR[ri]}`;
+    }
+  }
+  return null;
+};
+
+const renderArrowsAndHighlights = () => {
+  const container = $('board-arrows');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'arrowhead-notation');
+  marker.setAttribute('markerWidth', '6');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('refX', '4');
+  marker.setAttribute('refY', '3');
+  marker.setAttribute('orient', 'auto');
+  
+  const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  polygon.setAttribute('points', '0 1, 5 3, 0 5');
+  polygon.setAttribute('fill', arrowColor);
+  
+  marker.appendChild(polygon);
+  defs.appendChild(marker);
+  container.appendChild(defs);
+  
+  boardHighlights.forEach(sq => {
+    const coords = getSquareCenter(sq);
+    if (!coords) return;
+    
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', coords.x);
+    circle.setAttribute('cy', coords.y);
+    const sqEl = document.querySelector(`.sq[data-sq="${sq}"]`);
+    const r = sqEl ? (sqEl.offsetWidth / 2) - 4 : 20;
+    circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', arrowColor);
+    circle.setAttribute('stroke-width', '3');
+    circle.setAttribute('opacity', '0.85');
+    container.appendChild(circle);
+  });
+  
+  boardArrows.forEach(arr => {
+    const start = getSquareCenter(arr.from);
+    const end = getSquareCenter(arr.to);
+    if (!start || !end) return;
+    
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist === 0) return;
+    
+    const offset = 26;
+    const xEnd = end.x - (dx / dist) * offset;
+    const yEnd = end.y - (dy / dist) * offset;
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', start.x);
+    line.setAttribute('y1', start.y);
+    line.setAttribute('x2', xEnd);
+    line.setAttribute('y2', yEnd);
+    line.setAttribute('stroke', arrowColor);
+    line.setAttribute('stroke-width', '8');
+    line.setAttribute('opacity', '0.78');
+    line.setAttribute('marker-end', 'url(#arrowhead-notation)');
+    line.setAttribute('stroke-linecap', 'round');
+    
+    container.appendChild(line);
+  });
+};
+
+const toggleArrow = (from, to) => {
+  const index = boardArrows.findIndex(arr => arr.from === from && arr.to === to);
+  if (index >= 0) {
+    boardArrows.splice(index, 1);
+  } else {
+    boardArrows.push({ from, to });
+  }
+  renderArrowsAndHighlights();
+};
+
+const toggleSquareHighlight = (sq) => {
+  if (boardHighlights.has(sq)) {
+    boardHighlights.delete(sq);
+  } else {
+    boardHighlights.add(sq);
+  }
+  renderArrowsAndHighlights();
+};
+
+const clearArrowsAndHighlights = () => {
+  if (boardArrows.length > 0 || boardHighlights.size > 0) {
+    boardArrows = [];
+    boardHighlights.clear();
+    renderArrowsAndHighlights();
+  }
+};
+
+const onRightClickUp = (e) => {
+  window.removeEventListener('pointerup', onRightClickUp);
+  isRightClickDragging = false;
+  if (e.button === 2 && rightClickStartSq) {
+    const endSq = getSquareFromCoords(e.clientX, e.clientY);
+    if (endSq) {
+      if (rightClickStartSq === endSq) {
+        toggleSquareHighlight(endSq);
+      } else {
+        toggleArrow(rightClickStartSq, endSq);
+      }
+    }
+    rightClickStartSq = null;
+  }
+};
+
+const handlePremoveExecution = async () => {
+  if (!premovesEnabled || !queuedPremove) return;
+  const pm = queuedPremove;
+  queuedPremove = null;
+  
+  const pc = chess.get(pm.from);
+  let promo = null;
+  if (pc && pc.type === 'p' && (pm.to[1] === '8' || pm.to[1] === '1')) {
+    promo = 'q';
+  }
+  
+  const detail = { from: pm.from, to: pm.to };
+  if (promo) detail.promotion = promo;
+  
+  const moveRes = chess.move(detail);
+  if (moveRes) {
+    snd(moveRes.captured ? 'capture' : 'move');
+    if (chess.in_check()) snd('check');
+    if (chess.game_over()) { snd('end'); gameOver = true; }
+    
+    if (timerEnabled && !gameOver) {
+      applyIncrement(moveRes.color);
+      startClock();
+    }
+    
+    sendPeer({
+      type: 'move',
+      move: { from: pm.from, to: pm.to, promotion: promo },
+      wTime, bTime
+    });
+    
+    if (isRankedGame) touchRankedLiveGame();
+    renderBoard();
+    renderTimers();
+    updateMoveList();
+  } else {
+    renderBoard();
+  }
+};
+
+window.addEventListener('resize', renderArrowsAndHighlights);
+
 const setupPointers = () => {
   document.querySelectorAll('.sq').forEach(sq => {
     sq.onpointerdown = onSqDown;
@@ -2910,12 +3186,73 @@ const onSqDown = (e) => {
   const turn = chess.turn();
   if (gameOver || isReconnecting) return;
 
+  // Handle right-click for notation arrows/circles
+  if (e.button === 2) {
+    rightClickStartSq = sq;
+    isRightClickDragging = true;
+    window.addEventListener('pointerup', onRightClickUp);
+    return;
+  }
+
+  // Left-click clears/cancels premoves and clears arrows/circles
+  if (e.button === 0) {
+    if (queuedPremove) {
+      queuedPremove = null;
+      if (pc && pc.color === myColor) {
+        // Clear premove but let them drag their piece to create a new one below
+      } else {
+        renderBoard();
+        return;
+      }
+    }
+    clearArrowsAndHighlights();
+  }
+
+  if (e.button === 0 && selSq === sq) {
+    selSq = null;
+    legalDests = [];
+    renderBoard();
+    return;
+  }
+
   const canMove = mode === 'local' || turn === myColor;
+
+  // Initiate Premove drag if it's not our turn
+  if (e.button === 0 && !canMove && premovesEnabled && pc && pc.color === myColor) {
+    selSq = sq;
+    legalDests = [];
+    for (let f of ['a','b','c','d','e','f','g','h']) {
+      for (let r = 1; r <= 8; r++) {
+        if (`${f}${r}` !== sq) legalDests.push(`${f}${r}`);
+      }
+    }
+    isDragging = true;
+    dragFrom = sq;
+    renderBoard();
+    dragPcEl = document.querySelector(`.sq[data-sq="${sq}"] .pc`);
+    if (dragPcEl) {
+      dragPcEl.classList.add('drag');
+      const g = $('ghost');
+      g.innerHTML = dragPcEl.innerHTML;
+      g.style.width = g.style.height = `${dragPcEl.closest('.sq').offsetWidth}px`;
+      g.style.display = 'flex';
+      g.style.alignItems = 'center';
+      g.style.justifyContent = 'center';
+      moveGhost(e.clientX, e.clientY);
+      window.addEventListener('pointermove', onPtrMove);
+      window.addEventListener('pointerup', onPtrUp);
+    }
+    return;
+  }
 
   // If already selected, try move
   if (selSq && legalDests.includes(sq)) {
-    doMove(selSq, sq);
-    return;
+    if (pc && pc.color === myColor) {
+      // Clicked another of our pieces: select it instead of moving (fall through)
+    } else {
+      doMove(selSq, sq);
+      return;
+    }
   }
 
   if (pc && canMove && pc.color === turn) {
@@ -2987,10 +3324,30 @@ const onPtrUp = (e) => {
 // ─── MAKE A MOVE ───
 const doMove = async (from, to) => {
   if (isReconnecting || !onlineReady()) return;
+
+  const turn = chess.turn();
+  const isPremove = mode !== 'local' && turn !== myColor;
+
+  if (isPremove) {
+    if (premovesEnabled) {
+      queuedPremove = { from, to };
+      selSq = null;
+      legalDests = [];
+      renderBoard();
+    }
+    return;
+  }
+
   const pc = chess.get(from);
   let promo;
   if (pc && pc.type === 'p' && (to[1] === '8' || to[1] === '1')) {
     promo = await askPromo(pc.color);
+    if (!promo) {
+      selSq = null;
+      legalDests = [];
+      renderBoard();
+      return;
+    }
   }
   const detail = { from, to };
   if (promo) detail.promotion = promo;
@@ -3020,7 +3377,19 @@ const doMove = async (from, to) => {
   }
 
   if (mode === 'local' && autoFlipLocal && !gameOver) {
-    flipped = chess.turn() === 'b';
+    if (localFlipTimeout) clearTimeout(localFlipTimeout);
+    const delaySec = parseFloat($('flip-delay')?.value ?? 0.5);
+    if (delaySec > 0) {
+      localFlipTimeout = setTimeout(() => {
+        if (mode === 'local' && !gameOver) {
+          flipped = chess.turn() === 'b';
+          renderBoard();
+          renderTimers();
+        }
+      }, delaySec * 1000);
+    } else {
+      flipped = chess.turn() === 'b';
+    }
   }
   if (isRankedGame) touchRankedLiveGame();
 
@@ -3117,36 +3486,6 @@ const goLobby = () => {
     : mode;
   show('game-wrap', false); $('game-wrap').classList.remove('on');
   show('lobby', true);
-  mode = lobbyMode;
-  const copy = SCREEN_COPY[mode] || SCREEN_COPY.local;
-  $('lobby').dataset.mode = mode;
-  $('screen-title').textContent = copy.title;
-  $('screen-kicker').textContent = copy.kicker;
-  $('app-title').textContent = `${copy.title} Chess`;
-  document.querySelectorAll('.menu-item').forEach(item => {
-    item.classList.toggle('on', item.dataset.menuMode === mode);
-  });
-  $('menu-account').classList.toggle('on', mode === 'account');
-  $('sect-local').classList.toggle('on', mode === 'local');
-  $('sect-online').classList.toggle('on', mode === 'online');
-  $('sect-ranked').classList.toggle('on', mode === 'ranked');
-  $('sect-account').classList.toggle('on', mode === 'account');
-  show('ranked-leaderboard-panel', mode === 'ranked');
-  show('btn-start-local', mode === 'local');
-  syncHeaderMode();
-  show('share-box', false);
-  show('open-room-blocker', false);
-  
-  // Toggle matchmaking buttons based on current mode
-  const signedIn = !!rankedUser;
-  show('btn-create', mode === 'online');
-  show('btn-show-rooms', mode === 'online');
-  show('btn-start-local', mode === 'local');
-  show('ranked-matchmaking-card', mode === 'ranked' && signedIn);
-  show('ranked-matchmaking-locked-card', mode === 'ranked' && !signedIn);
-  show('btn-create-ranked', mode === 'ranked' && signedIn);
-  show('btn-show-rooms-ranked', mode === 'ranked' && signedIn);
-  show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
 
   // Reset ranked matchmaking settings
   isRanked = false;
@@ -3183,6 +3522,7 @@ const goLobby = () => {
   serverOfflineGameNoticeShown = false;
   if (reconnectTimeout) { clearTimeout(reconnectTimeout); reconnectTimeout = null; }
   if (guestReconnectInterval) { clearInterval(guestReconnectInterval); guestReconnectInterval = null; }
+  if (localFlipTimeout) { clearTimeout(localFlipTimeout); localFlipTimeout = null; }
   opponentName = 'Opponent';
   activeTC = null;
   activeHcWMul = 1;
@@ -3196,10 +3536,13 @@ const goLobby = () => {
   show('btn-pgn', false);
   show('btn-rematch', false);
   setStatus('', 'Offline');
-  updateHeaderStatus();
+
+  setAppMode(lobbyMode, false);
+  syncHeaderMode();
 };
 
 const goGame = () => {
+  if (localFlipTimeout) { clearTimeout(localFlipTimeout); localFlipTimeout = null; }
   if (lobbyWs && !isHost) {
     try { lobbyWs.close(); } catch(e){}
     lobbyWs = null;
@@ -3210,6 +3553,7 @@ const goGame = () => {
   show('game-wrap', true); $('game-wrap').classList.add('on');
   serverOfflineGameNoticeShown = false;
   syncHeaderMode();
+  syncLayoutMode();
   show('btn-pgn', false);
   show('btn-rematch', false);
   resetRematchButton();
@@ -3217,6 +3561,8 @@ const goGame = () => {
   $('m-rematch').classList.remove('on');
   document.querySelector('[data-t="t-moves"]').click();
   chess.reset();
+  queuedPremove = null;
+  clearArrowsAndHighlights();
 
   // If activeTC is not initialized, set it from the current lobby selection
   if (!activeTC) {
@@ -3412,11 +3758,14 @@ const setMatchmakingControlsLocked = (locked) => {
 const syncMatchmakingUi = () => {
   const open = hasOpenMatchmakingRoom();
   setMatchmakingControlsLocked(open);
+  const signedIn = !!rankedUser;
+
   const ownTab = open && mode === matchmakingMode;
   const otherPlayTab = open && (mode === 'local' || mode === 'online' || mode === 'ranked') && mode !== matchmakingMode;
 
   show('share-box', ownTab);
   show('open-room-blocker', otherPlayTab);
+
   if (otherPlayTab) {
     const label = matchmakingMode === 'ranked' ? 'ranked' : 'online';
     $('open-room-blocker-text').textContent = `You already have an ${label} room open. Close that room before starting or joining another game.`;
@@ -3426,35 +3775,42 @@ const syncMatchmakingUi = () => {
     show('btn-show-rooms', false);
     show('ranked-matchmaking-card', false);
     show('ranked-matchmaking-locked-card', false);
-    show('ranked-leaderboard-panel', false);
+    show('btn-create-ranked', false);
+    show('btn-show-rooms-ranked', false);
     return;
   }
 
-  if (open && !ownTab) {
-    show('setup-options', false);
+  if (open && ownTab) {
+    show('setup-options', true);
     show('btn-start-local', false);
     show('btn-create', false);
     show('btn-show-rooms', false);
+    show('name-grp-single', true);
+    show('name-grp-double', false);
+    if (mode === 'ranked') {
+      show('ranked-matchmaking-card', signedIn);
+      show('ranked-matchmaking-locked-card', false);
+      show('btn-create-ranked', false);
+      show('btn-show-rooms-ranked', false);
+    }
     return;
   }
 
-  if (!open) {
-    show('share-box', false);
-    show('open-room-blocker', false);
-    return;
-  }
+  // If no room is open at all, set visibility based on current mode
+  show('setup-options', mode === 'local' || mode === 'online' || (mode === 'ranked' && signedIn));
+  show('name-grp-single', mode === 'online' || mode === 'ranked');
+  show('name-grp-double', mode === 'local');
+  show('setting-auto-flip', mode === 'local');
+  show('setting-flip-delay-container', mode === 'local' && autoFlipLocal);
 
-  show('open-room-blocker', false);
-  show('setup-options', true);
-  show('btn-start-local', false);
-  show('btn-create', false);
-  show('btn-show-rooms', false);
-  if (mode === 'ranked') {
-    show('ranked-matchmaking-card', !!rankedUser);
-    show('ranked-matchmaking-locked-card', false);
-    show('btn-create-ranked', false);
-    show('btn-show-rooms-ranked', false);
-  }
+  show('btn-start-local', mode === 'local');
+  show('btn-create', mode === 'online');
+  show('btn-show-rooms', mode === 'online');
+
+  show('ranked-matchmaking-card', mode === 'ranked' && signedIn);
+  show('ranked-matchmaking-locked-card', mode === 'ranked' && !signedIn);
+  show('btn-create-ranked', mode === 'ranked' && signedIn);
+  show('btn-show-rooms-ranked', mode === 'ranked' && signedIn);
 };
 
 const cancelOpenMatchmakingRoom = (reason='Room closed.') => {
@@ -3630,6 +3986,7 @@ $('sel-pieces').onchange = (e) => { pieceStyle = e.target.value; renderBoard(); 
 
 $('chk-auto-flip').onchange = (e) => {
   autoFlipLocal = e.target.checked;
+  show('setting-flip-delay-container', autoFlipLocal);
   if (mode === 'local') {
     flipped = autoFlipLocal ? chess.turn() === 'b' : false;
     renderBoard(); renderTimers();
@@ -3639,6 +3996,39 @@ $('chk-auto-flip').onchange = (e) => {
 $('last-move-color').oninput = (e) => setLastMoveColor(e.target.value);
 $('last-move-color').onchange = (e) => setLastMoveColor(e.target.value);
 $('chk-shadows').onchange = (e) => setShadows(e.target.checked);
+
+$('chk-premoting').onchange = (e) => {
+  premovesEnabled = e.target.checked;
+  if (!premovesEnabled) {
+    queuedPremove = null;
+    renderBoard();
+  }
+};
+$('premove-color').oninput = (e) => setPremoveColor(e.target.value);
+$('premove-color').onchange = (e) => setPremoveColor(e.target.value);
+$('arrow-color').oninput = (e) => {
+  arrowColor = e.target.value;
+  renderArrowsAndHighlights();
+};
+$('arrow-color').onchange = (e) => {
+  arrowColor = e.target.value;
+  renderArrowsAndHighlights();
+};
+
+// Pawn promotion escape and click-out handlers
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if ($('m-promo').classList.contains('on')) {
+      closePromo(null);
+    }
+  }
+});
+$('m-promo').onclick = (e) => {
+  if (e.target === $('m-promo')) {
+    closePromo(null);
+  }
+};
+
 $('ranked-sign-in').onclick = rankedSignIn;
 $('ranked-sign-up').onclick = rankedSignUp;
 $('ranked-save-profile').onclick = rankedSaveProfile;
@@ -4254,7 +4644,8 @@ const setupConn = () => {
         name: myName,
         userId: rankedUser?.id || null,
         rating: rankedProfile?.rating || 1200,
-        avatarUrl: myAvatarUrl
+        avatarUrl: myAvatarUrl,
+        version: APP_VERSION
       });
     }
     show('tab-chat', true);
@@ -4533,6 +4924,14 @@ const handleMsg = async (d) => {
     }
 
     case 'init': {
+      const peerVer = d.version || '0.0.0';
+      const minVer = appVersionInfo?.minimum_supported_version || APP_VERSION;
+      if (compareVersions(peerVer, minVer) < 0 || compareVersions(peerVer, APP_VERSION) !== 0) {
+        dlg('Version Mismatch', `The host's client version (v${peerVer}) does not match your version (v${APP_VERSION}). Connection aborted.`);
+        closeTransport();
+        goLobby();
+        break;
+      }
       if (d.ranked && !rankedUser) {
         dlg('Authentication Required', 'You must be signed in to join this ranked game.');
         closeTransport();
@@ -4568,7 +4967,11 @@ const handleMsg = async (d) => {
         hcWMul = d.hc.wMul; hcBMul = d.hc.bMul; hcPiece = d.hc.piece;
         activeHcWMul = d.hc.wMul; activeHcBMul = d.hc.bMul; activeHcPiece = d.hc.piece;
       }
-      setupOnlineGame(d.hostName, myName, myColor);
+      setupOnlineGame(
+        d.hostColor === 'w' ? d.hostName : myName,
+        d.hostColor === 'b' ? d.hostName : myName,
+        myColor
+      );
       addChat('System', `Connected to ${d.hostName}'s game.`, 'sys');
       sendPeer({
         type: 'join_ack',
@@ -4581,6 +4984,13 @@ const handleMsg = async (d) => {
     }
 
     case 'join': {
+      const peerVer = d.version || '0.0.0';
+      const minVer = appVersionInfo?.minimum_supported_version || APP_VERSION;
+      if (compareVersions(peerVer, minVer) < 0 || compareVersions(peerVer, APP_VERSION) !== 0) {
+        rejectCurrentJoin('version_mismatch', `Your client version (v${peerVer}) does not match the host's version (v${APP_VERSION}).`);
+        dlg('Connection Rejected', `A player tried to join but was rejected due to a version mismatch. Their version: v${peerVer}, required: v${APP_VERSION}`);
+        break;
+      }
       if (sameSignedInAccount(d.userId)) {
         rejectCurrentJoin('same_account', 'You cannot play against the same signed-in account.');
         dlg('Same Account', 'Blocked a join attempt from the same signed-in account.');
@@ -4618,7 +5028,8 @@ const handleMsg = async (d) => {
         ranked: isRankedGame,
         hostUserId: hostUserId,
         hostRating: hostRating,
-        hostAvatarUrl: myAvatarUrl
+        hostAvatarUrl: myAvatarUrl,
+        version: APP_VERSION
       });
       setupOnlineGame(myColor === 'w' ? myName : d.name, myColor === 'w' ? d.name : myName, myColor);
       addChat('System', `${d.name} joined.`, 'sys');
@@ -4670,6 +5081,10 @@ const handleMsg = async (d) => {
 
         selSq = null; legalDests = [];
         renderBoard(); updateStatus(); updateMoves(); renderTimers(); updateGameActionLabels();
+
+        if (!gameOver) {
+          setTimeout(handlePremoveExecution, 50);
+        }
       }
       break;
     }
